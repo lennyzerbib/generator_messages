@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Envoyer un Hello sur WhatsApp</title>
+  <title>Générateur de Messages</title>
   <style>
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
     body { margin: 0; background:#0b0d12; color:#eef1f6; display:flex; min-height:100dvh; }
@@ -13,10 +13,7 @@
     p.hint { margin:0 0 18px; opacity:.85; }
     label { display:block; margin:14px 0 6px; font-weight:600; }
     input, select, button, .row { width:100%; }
-    input, select {
-      background:#0e121a; color:#eef1f6; border:1px solid #283042;
-      border-radius:12px; padding:12px 14px; font-size:16px; outline:none;
-    }
+    input, select { background:#0e121a; color:#eef1f6; border:1px solid #283042; border-radius:12px; padding:12px 14px; font-size:16px; outline:none; }
     input:focus, select:focus { border-color:#3e7aff; box-shadow:0 0 0 3px rgba(62,122,255,.2); }
     .row { display:flex; gap:10px; }
     .row > * { flex:1; }
@@ -30,17 +27,61 @@
     .note { font-size:13px; opacity:.75; margin-top:10px; }
     .error { color:#ff7b7b; margin-top:10px; display:none; }
     footer { margin-top:16px; font-size:12px; opacity:.6; text-align:center; }
+
+    /* Segmented button groups */
+    .seg { display:flex; gap:8px; }
+    .seg button {
+      flex:1; margin-top:0; background:#0e121a; border:1px solid #283042; color:#eef1f6;
+      padding:10px 12px; border-radius:10px; font-weight:600; cursor:pointer;
+    }
+    .seg button[aria-pressed="true"] { background:#3e7aff; color:#fff; border-color:#3e7aff; }
+    .seg button:focus-visible { outline: 3px solid rgba(62,122,255,.5); outline-offset:2px; }
+
+    /* Custom country code input */
+    #customCodeWrap { display:none; }
+    #customCode { letter-spacing: .5px; }
   </style>
 </head>
 <body>
   <main class="wrap">
     <div class="card">
-      <h1>Envoyer “Hello &lt;NOM&gt;” sur WhatsApp</h1>
-      <p class="hint">Saisissez le nom et le numéro. Nous ouvrirons WhatsApp (ou WhatsApp Web) avec le message prérempli.</p>
+      <h1>Messages : Villa Marina / Sephora</h1>
+      <p class="hint">Choisissez la villa, l'appartement, le canal, puis saisissez le nom, les codes et le numéro. Nous ouvrirons l’app correspondante avec le message prérempli.</p>
 
       <form id="wappForm">
+        <!-- Boutons dépendants -->
+        <label>Villa</label>
+        <div class="seg" id="villaGroup" role="group" aria-label="Choix de la villa">
+          <button type="button" data-value="Villa Marina" aria-pressed="true">Villa Marina</button>
+          <button type="button" data-value="Villa Sephora" aria-pressed="false">Villa Sephora</button>
+        </div>
+
+        <label style="margin-top:12px">Appartement</label>
+        <select id="optionSelect" aria-label="Choix d'option"></select>
+
+        <!-- Nouveau : choix du canal -->
+        <label style="margin-top:12px">Canal</label>
+        <div class="seg" id="channelGroup" role="group" aria-label="Choix du canal">
+          <button type="button" data-value="whatsapp" aria-pressed="true">WhatsApp</button>
+          <button type="button" data-value="sms" aria-pressed="false">Message (SMS)</button>
+        </div>
+
+        <hr style="margin:18px 0;border:none;border-top:1px solid #222938" />
+
         <label for="name">Nom</label>
-        <input id="name" name="name" type="text" placeholder="Ex. Marie Dupont" autocomplete="name" required />
+        <input id="name" name="name" type="text" placeholder="Ex. Lenny Zerbib" autocomplete="name" required />
+
+        <label for="digicodeEntree">Digicode Immeuble</label>
+        <input id="digicodeEntree" name="digicodeEntree" type="tel" inputmode="numeric" pattern="\d*" placeholder="Ex. 1234" />
+
+        <label for="digicodeAppartement">Digicode Appartement</label>
+        <input id="digicodeAppartement" name="digicodeAppartement" type="tel" inputmode="numeric" pattern="\d*" placeholder="Ex. 5678" />
+
+        <label for="dateArrivee">Date d’arrivée</label>
+        <input id="dateArrivee" name="dateArrivee" type="date" required />
+
+        <label for="dateDepart">Date de départ</label>
+        <input id="dateDepart" name="dateDepart" type="date" required />
 
         <label for="phone">Numéro de téléphone</label>
         <div class="row">
@@ -61,15 +102,23 @@
             <option value="+91">🇮🇳 +91 (Inde)</option>
             <option value="+81">🇯🇵 +81 (Japon)</option>
             <option value="+61">🇦🇺 +61 (Australie)</option>
+            <option value="__custom">✏️ Autre indicatif…</option>
           </select>
-          <input id="phone" class="phone" name="phone" type="tel" inputmode="tel"
-                 placeholder="Ex. +33612345678 ou 0612345678" required />
+          <input id="phone" class="phone" name="phone" type="tel" inputmode="tel" placeholder="Ex. +33612345678 ou 0612345678" required />
         </div>
 
-        <button type="submit">Ouvrir WhatsApp</button>
+        <div id="customCodeWrap" class="row" aria-hidden="true">
+          <input id="customCode" class="country" type="text" inputmode="tel" placeholder="Entrez un indicatif au format +XXX (ex. +380)" />
+        </div>
 
         <div id="error" class="error" role="alert">Veuillez entrer un numéro valide.</div>
-        <div class="note">Si vous mettez un <strong>0 initial</strong> (ex. 06…), nous utiliserons l’indicatif sélectionné.</div>
+
+        <button type="submit">Envoyer</button>
+
+        <div class="note">
+          Si vous mettez un <strong>0 initial</strong> (ex. 06…), nous utiliserons l’indicatif sélectionné.
+          Vous pouvez aussi saisir un <strong>indicatif personnalisé</strong> via « Autre indicatif… ».
+        </div>
       </form>
 
       <footer>Fonctionne sur iPhone, Android, Windows, macOS &amp; WhatsApp Web.</footer>
@@ -77,61 +126,144 @@
   </main>
 
   <script>
+    // --- Segmented helpers ---
+    function setPressed(btn, pressed) { btn.setAttribute('aria-pressed', pressed ? 'true' : 'false'); }
+    function getPressedValue(group) {
+      const active = group.querySelector('button[aria-pressed="true"]');
+      return active ? active.dataset.value : null;
+    }
+    function makeSegmentedInteractive(group) {
+      group.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn || !group.contains(btn)) return;
+        group.querySelectorAll('button').forEach(x => setPressed(x, false));
+        setPressed(btn, true);
+      });
+    }
+
+    const villaGroup = document.getElementById('villaGroup');
+    const optionSelect = document.getElementById('optionSelect');
+    const channelGroup = document.getElementById('channelGroup');
+
+    function refreshOptions() {
+      const villa = getPressedValue(villaGroup);
+      const list = villa === 'Villa Sephora' ? ['Kos', 'Kea', 'Samos', 'Symi', 'Milos', 'Rhodes', 'Santorin', 'Corfou', 'Mykonos'] :
+        ['Little Havana', 'Downtown', 'Design District', 'Coconut Grove Terrasse', 'South Beach Terrasse', 'Wynwood Loft', 'Villa Marina Building'];
+      optionSelect.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '— Choisir —';
+      optionSelect.appendChild(placeholder);
+      list.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v; optionSelect.appendChild(opt);
+      });
+      optionSelect.selectedIndex = 0;
+    }
+
+    // init segmented groups & options
+    makeSegmentedInteractive(villaGroup);
+    makeSegmentedInteractive(channelGroup);
+    refreshOptions();
+
+    // Quand on change de villa, mettre à jour la liste
+    villaGroup.addEventListener('click', (e) => {
+      if (e.target.closest('button')) refreshOptions();
+    });
+
+    // --- Phone normalization ---
     function normalizeNumber(raw, countryCode) {
-      // Enlève tout sauf + et chiffres
-      let s = (raw || "").trim();
-      // remplace les espaces, parenthèses, tirets, points
-      s = s.replace(/[^\d+]/g, "");
-      // Si commence par 00, convertir en +
-      if (s.startsWith("00")) s = "+" + s.slice(2);
-      // Si commence par + : on le garde tel quel
-      if (s.startsWith("+")) return s.replace(/\+/g, "+"); // garde un seul +
-      // Si commence par 0 : remplace le 0 par l'indicatif choisi
-      if (s.startsWith("0")) {
-        return countryCode + s.slice(1);
-      }
-      // Sinon, c'est probablement un national sans 0 : préfixer avec indicatif
+      let s = (raw || '').trim();
+      s = s.replace(/[^\d+]/g, '');
+      if (s.startsWith('00')) s = '+' + s.slice(2);
+      if (s.startsWith('+')) return s.replace(/\++/g, '+');
+      if (s.startsWith('0')) return countryCode + s.slice(1);
       return countryCode + s;
     }
+    function toE164Digits(s) { return (s || '').replace(/\D/g, ''); }
 
-    function toE164Digits(s) {
-      // wa.me exige uniquement des chiffres, sans + ni espaces
-      return (s || "").replace(/\D/g, "");
+    // --- Custom country code handling ---
+    const countrySel = document.getElementById('country');
+    const customWrap = document.getElementById('customCodeWrap');
+    const customInput = document.getElementById('customCode');
+
+    function currentDialCode() {
+      if (countrySel.value === '__custom') return (customInput.value || '').trim();
+      return countrySel.value;
     }
+    function validateDialCode(code) { return /^\+\d{1,4}$/.test(code); }
 
-    document.getElementById("wappForm").addEventListener("submit", function (e) {
+    countrySel.addEventListener('change', () => {
+      const isCustom = countrySel.value === '__custom';
+      customWrap.style.display = isCustom ? 'flex' : 'none';
+      customWrap.setAttribute('aria-hidden', isCustom ? 'false' : 'true');
+      if (isCustom) customInput.focus();
+    });
+
+    // --- Submit handling ---
+    document.getElementById('wappForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      const name = (document.getElementById("name").value || "").trim();
-      const country = document.getElementById("country").value;
-      const phoneRaw = document.getElementById("phone").value;
+      const name = (document.getElementById('name').value || '').trim();
+      const phoneRaw = document.getElementById('phone').value;
+      const channel = getPressedValue(channelGroup) || 'whatsapp';
 
-      const normalized = normalizeNumber(phoneRaw, country);
-      const digits = toE164Digits(normalized);
-
-      // Validation simple : au moins 8 chiffres
-      const errorEl = document.getElementById("error");
-      if (!digits || digits.length < 8) {
-        errorEl.style.display = "block";
-        return;
-      } else {
-        errorEl.style.display = "none";
+      let dial = currentDialCode();
+      if (countrySel.value === '__custom') {
+        if (!validateDialCode(dial)) {
+          const errorEl = document.getElementById('error');
+          errorEl.textContent = 'Veuillez saisir un indicatif personnalisé valide (format +XXX).';
+          errorEl.style.display = 'block';
+          return;
+        }
+      } else if (!dial) {
+        dial = '+33';
       }
 
-      const message = `Hello ${name || ""}`.trim();
+      const normalized = normalizeNumber(phoneRaw, dial || '+33');
+      const digits = toE164Digits(normalized);
+
+      const errorEl = document.getElementById('error');
+      if (!digits || digits.length < 8) {
+        errorEl.textContent = 'Veuillez entrer un numéro valide.';
+        errorEl.style.display = 'block';
+        return;
+      } else {
+        errorEl.style.display = 'none';
+      }
+
+      const villa = getPressedValue(villaGroup) || '';
+      const option = (document.getElementById('optionSelect').value || '');
+      const digicodeEntree = (document.getElementById('digicodeEntree').value || '');
+      const digicodeAppartement = (document.getElementById('digicodeAppartement').value || '');
+      const dateArrivee = document.getElementById('dateArrivee').value;
+      const dateDepart = document.getElementById('dateDepart').value;
+
+      const message = 
+        `Bonjour ${name},
+Merci pour votre réservation dans la ${villa} (Appartement ${option}) du ${dateArrivee} au ${dateDepart}.
+
+Immeuble : ${digicodeEntree}
+Appartement : ${digicodeAppartement}
+
+Bonne installation!`;
+
       const encoded = encodeURIComponent(message);
 
-      // Lien universel : ouvre WhatsApp Web sur desktop et l'app sur mobile
-      const waUrl = `https://wa.me/${digits}?text=${encoded}`;
+      function openWhatsApp() {
+        const waUrl = `https://wa.me/${digits}?text=${encoded}`;
+        window.location.href = waUrl;
+        setTimeout(() => {
+          const deepLink = `whatsapp://send?phone=${digits}&text=${encoded}`;
+          window.location.href = deepLink;
+        }, 600);
+      }
+      function openSMS() {
+        const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const smsUrl = isiOS ? `sms:${digits}&body=${encoded}` : `sms:${digits}?body=${encoded}`;
+        window.location.href = smsUrl;
+      }
 
-      // Redirection
-      window.location.href = waUrl;
-
-      // En secours pour certains iOS, tenter le schéma natif après un court délai
-      setTimeout(() => {
-        const deepLink = `whatsapp://send?phone=${digits}&text=${encoded}`;
-        // Essai silencieux ; sur desktop cela n'aura pas d'effet.
-        window.location.href = deepLink;
-      }, 600);
+      if (channel === 'sms') openSMS(); else openWhatsApp();
     });
   </script>
 </body>
