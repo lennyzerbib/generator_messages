@@ -238,12 +238,19 @@
       const dateArrivee = document.getElementById('dateArrivee').value;
       const dateDepart = document.getElementById('dateDepart').value;
 
+      const base = new URL('.', location.href).href;          // URL du dossier courant
+      const contratUrl = base + 'contrat.html';
+
+
       const message = 
         `Bonjour ${name},
 Merci pour votre réservation dans la ${villa} (Appartement ${option}) du ${dateArrivee} au ${dateDepart}.
 
 Immeuble : ${digicodeEntree}
 Appartement : ${digicodeAppartement}
+
+Voici votre document important à conserver :
+${contratUrl}
 
 Bonne installation!`;
 
