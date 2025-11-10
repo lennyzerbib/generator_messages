@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Envoyer un Hello sur WhatsApp</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; background:#0b0d12; color:#eef1f6; display:flex; min-height:100dvh; }
+    .wrap { margin:auto; width:min(720px, 92vw); }
+    .card { background:#121722; border:1px solid #222938; border-radius:16px; padding:24px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    h1 { font-size:clamp(22px, 3.5vw, 28px); margin:0 0 8px; }
+    p.hint { margin:0 0 18px; opacity:.85; }
+    label { display:block; margin:14px 0 6px; font-weight:600; }
+    input, select, button, .row { width:100%; }
+    input, select {
+      background:#0e121a; color:#eef1f6; border:1px solid #283042;
+      border-radius:12px; padding:12px 14px; font-size:16px; outline:none;
+    }
+    input:focus, select:focus { border-color:#3e7aff; box-shadow:0 0 0 3px rgba(62,122,255,.2); }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+    .country { flex: 1.2; }
+    .phone { flex: 2; }
+    button {
+      margin-top:16px; background:#3e7aff; color:white; border:none; padding:13px 16px;
+      border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;
+    }
+    button:active { transform: translateY(1px); }
+    .note { font-size:13px; opacity:.75; margin-top:10px; }
+    .error { color:#ff7b7b; margin-top:10px; display:none; }
+    footer { margin-top:16px; font-size:12px; opacity:.6; text-align:center; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="card">
+      <h1>Envoyer “Hello &lt;NOM&gt;” sur WhatsApp</h1>
+      <p class="hint">Saisissez le nom et le numéro. Nous ouvrirons WhatsApp (ou WhatsApp Web) avec le message prérempli.</p>
+
+      <form id="wappForm">
+        <label for="name">Nom</label>
+        <input id="name" name="name" type="text" placeholder="Ex. Marie Dupont" autocomplete="name" required />
+
+        <label for="phone">Numéro de téléphone</label>
+        <div class="row">
+          <select id="country" class="country" aria-label="Indicatif pays">
+            <!-- Quelques indicatifs courants, FR par défaut -->
+            <option value="+33" selected>🇫🇷 +33 (France)</option>
+            <option value="+32">🇧🇪 +32 (Belgique)</option>
+            <option value="+41">🇨🇭 +41 (Suisse)</option>
+            <option value="+39">🇮🇹 +39 (Italie)</option>
+            <option value="+34">🇪🇸 +34 (Espagne)</option>
+            <option value="+49">🇩🇪 +49 (Allemagne)</option>
+            <option value="+44">🇬🇧 +44 (R.-Uni)</option>
+            <option value="+1">🇺🇸 +1 (USA/Canada)</option>
+            <option value="+212">🇲🇦 +212 (Maroc)</option>
+            <option value="+216">🇹🇳 +216 (Tunisie)</option>
+            <option value="+213">🇩🇿 +213 (Algérie)</option>
+            <option value="+971">🇦🇪 +971 (EAU)</option>
+            <option value="+91">🇮🇳 +91 (Inde)</option>
+            <option value="+81">🇯🇵 +81 (Japon)</option>
+            <option value="+61">🇦🇺 +61 (Australie)</option>
+          </select>
+          <input id="phone" class="phone" name="phone" type="tel" inputmode="tel"
+                 placeholder="Ex. +33612345678 ou 0612345678" required />
+        </div>
+
+        <button type="submit">Ouvrir WhatsApp</button>
+
+        <div id="error" class="error" role="alert">Veuillez entrer un numéro valide.</div>
+        <div class="note">Si vous mettez un <strong>0 initial</strong> (ex. 06…), nous utiliserons l’indicatif sélectionné.</div>
+      </form>
+
+      <footer>Fonctionne sur iPhone, Android, Windows, macOS &amp; WhatsApp Web.</footer>
+    </div>
+  </main>
+
+  <script>
+    function normalizeNumber(raw, countryCode) {
+      // Enlève tout sauf + et chiffres
+      let s = (raw || "").trim();
+      // remplace les espaces, parenthèses, tirets, points
+      s = s.replace(/[^\d+]/g, "");
+      // Si commence par 00, convertir en +
+      if (s.startsWith("00")) s = "+" + s.slice(2);
+      // Si commence par + : on le garde tel quel
+      if (s.startsWith("+")) return s.replace(/\+/g, "+"); // garde un seul +
+      // Si commence par 0 : remplace le 0 par l'indicatif choisi
+      if (s.startsWith("0")) {
+        return countryCode + s.slice(1);
+      }
+      // Sinon, c'est probablement un national sans 0 : préfixer avec indicatif
+      return countryCode + s;
+    }
+
+    function toE164Digits(s) {
+      // wa.me exige uniquement des chiffres, sans + ni espaces
+      return (s || "").replace(/\D/g, "");
+    }
+
+    document.getElementById("wappForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = (document.getElementById("name").value || "").trim();
+      const country = document.getElementById("country").value;
+      const phoneRaw = document.getElementById("phone").value;
+
+      const normalized = normalizeNumber(phoneRaw, country);
+      const digits = toE164Digits(normalized);
+
+      // Validation simple : au moins 8 chiffres
+      const errorEl = document.getElementById("error");
+      if (!digits || digits.length < 8) {
+        errorEl.style.display = "block";
+        return;
+      } else {
+        errorEl.style.display = "none";
+      }
+
+      const message = `Hello ${name || ""}`.trim();
+      const encoded = encodeURIComponent(message);
+
+      // Lien universel : ouvre WhatsApp Web sur desktop et l'app sur mobile
+      const waUrl = `https://wa.me/${digits}?text=${encoded}`;
+
+      // Redirection
+      window.location.href = waUrl;
+
+      // En secours pour certains iOS, tenter le schéma natif après un court délai
+      setTimeout(() => {
+        const deepLink = `whatsapp://send?phone=${digits}&text=${encoded}`;
+        // Essai silencieux ; sur desktop cela n'aura pas d'effet.
+        window.location.href = deepLink;
+      }, 600);
+    });
+  </script>
+</body>
+</html>
