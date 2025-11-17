@@ -468,9 +468,8 @@
           throw new Error("URL non reçue du serveur");
         }
         
-        const previewUrl = result.url;
+        const previewUrl = `${result.url.split('/i/')[0]}/message_preview.html?code=${result.code}`;
 
-        // 3. Générer le message MINI pour l'envoi (plus court)
         const messageMini = getWelcomeMessageMini({
           language,
           name,
