@@ -65,13 +65,24 @@
           <button type="button" data-value="sms" aria-pressed="false">Message (SMS)</button>
         </div>
 
-        <label style="margin-top:12px">Langue</label>
+        <!-- <label style="margin-top:12px">Langue</label>
         <div class="seg" id="language_message" role="group" aria-label="Choix du language">
           <button type="button" data-value="fr" aria-pressed="true">Français</button>
           <button type="button" data-value="en" aria-pressed="false">Anglais</button>
           <button type="button" data-value="es" aria-pressed="false">Espagnol</button>
           <button type="button" data-value="it" aria-pressed="false">Italien</button>
           <button type="button" data-value="ru" aria-pressed="false">Russe</button>
+        </div> -->
+
+        <label for="language_message">Langue du message</label>
+        <div class="row">
+          <select id="language_message" class="language" aria-label="Choix de la langue">
+            <option value="fr" selected>🇫🇷 Français</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="ru">🇷🇺 Русский</option>
+          </select>
         </div>
 
         <hr style="margin:18px 0;border:none;border-top:1px solid #222938" />
@@ -317,7 +328,6 @@
     const villaGroup = document.getElementById('villaGroup');
     const optionSelect = document.getElementById('optionSelect');
     const channelGroup = document.getElementById('channelGroup');
-    const languageGroup = document.getElementById('language_message');
 
     function refreshOptions() {
       const villa = getPressedValue(villaGroup);
@@ -338,7 +348,6 @@
     // init segmented groups & options
     makeSegmentedInteractive(villaGroup);
     makeSegmentedInteractive(channelGroup);
-    makeSegmentedInteractive(languageGroup);
     refreshOptions();
 
     // Quand on change de villa, mettre à jour la liste
@@ -381,7 +390,8 @@
       const name = (document.getElementById('name').value || '').trim();
       const phoneRaw = document.getElementById('phone').value;
       const channel = getPressedValue(channelGroup) || 'whatsapp';
-      const language = getPressedValue(languageGroup) || 'fr';
+      const languageSelect = document.getElementById('language_message');
+      const language = languageSelect.value || 'fr';
 
       let dial = currentDialCode();
       if (countrySel.value === '__custom') {
