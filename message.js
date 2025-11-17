@@ -1,5 +1,3 @@
-// messages.js - Gestion des messages multilingues
-
 /**
  * Génère le message de bienvenue COURT selon la langue choisie
  * @param {Object} params - Les paramètres du message
@@ -226,17 +224,17 @@ function getWelcomeMessage(params) {
 Nous avons l'immense plaisir de vous accueillir dans notre résidence, la ${villa} Cannes!
 Nous souhaitons que votre séjour se déroule de manière des plus agréables. Permettez-nous de vous fournir toutes les informations importantes lors de votre séjour :
 
-— Adresse: ${adresse}
-— Appartement: ${appartment}, ${detail_appart}
+— Adresse : ${adresse}
+— Appartement : ${appartment}, ${detail_appart}
 
-— Code d'accès à l'immeuble: ${digicodeEntree} #
-— Code d'accès à votre apt: ${digicodeAppartement} ${lockIcon}
+— Code d'accès à l'immeuble : ${digicodeEntree} #
+— Code d'accès à votre apt : ${digicodeAppartement} ${lockIcon}
 
-— Date d'Arrivée: ${dateArrivee}
-— Date de Départ: ${dateDepart}
+— Date d'Arrivée : ${dateArrivee}
+— Date de Départ : ${dateDepart}
 
-— Wifi: ${wifi}
-— Mot de Passe Wifi: ${password_wifi}
+— Wifi : ${wifi}
+— Mot de Passe Wifi : ${password_wifi}
 
 Pour refermer : faire le code et appuyer sur le cadenas 5 secondes
 Avant d'entrer votre code d'accès pour accéder à l'appartement, veuillez patienter jusqu'à ce que le clavier numérique s'illumine, s'il vous plaît. Cela indique que le clavier est prêt à recevoir votre code.
@@ -397,7 +395,11 @@ Il team di ${villa} Cannes`;
   return '';
 }
 
-// Exporter les fonctions pour l'utiliser dans d'autres fichiers
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { getWelcomeMessage, getWelcomeMessageMini };
+}
+
+if (typeof window !== 'undefined') {
+  window.getWelcomeMessage = getWelcomeMessage;
+  window.getWelcomeMessageMini = getWelcomeMessageMini;
 }
