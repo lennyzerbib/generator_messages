@@ -24,6 +24,7 @@
       border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;
     }
     button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
     .note { font-size:13px; opacity:.75; margin-top:10px; }
     .error { color:#ff7b7b; margin-top:10px; display:none; }
     footer { margin-top:16px; font-size:12px; opacity:.6; text-align:center; }
@@ -46,7 +47,7 @@
   <main class="wrap">
     <div class="card">
       <h1>Messages : Villa Marina / Sephora</h1>
-      <p class="hint">Choisissez la villa, l'appartement, le canal, puis saisissez le nom, les codes et le numéro. Nous ouvrirons l’app correspondante avec le message prérempli.</p>
+      <p class="hint">Choisissez la villa, l'appartement, le canal, puis saisissez le nom, les codes et le numéro. Nous ouvrirons l'app correspondante avec le message prérempli.</p>
 
       <form id="wappForm">
         <!-- Boutons dépendants -->
@@ -64,15 +65,6 @@
           <button type="button" data-value="whatsapp" aria-pressed="true">WhatsApp</button>
           <button type="button" data-value="sms" aria-pressed="false">Message (SMS)</button>
         </div>
-
-        <!-- <label style="margin-top:12px">Langue</label>
-        <div class="seg" id="language_message" role="group" aria-label="Choix du language">
-          <button type="button" data-value="fr" aria-pressed="true">Français</button>
-          <button type="button" data-value="en" aria-pressed="false">Anglais</button>
-          <button type="button" data-value="es" aria-pressed="false">Espagnol</button>
-          <button type="button" data-value="it" aria-pressed="false">Italien</button>
-          <button type="button" data-value="ru" aria-pressed="false">Russe</button>
-        </div> -->
 
         <label for="language_message">Langue du message</label>
         <div class="row">
@@ -96,7 +88,7 @@
         <label for="digicodeAppartement">Digicode Appartement</label>
         <input id="digicodeAppartement" name="digicodeAppartement" type="tel" inputmode="numeric" pattern="\d*" placeholder="Ex. 5678" />
 
-        <label for="dateArrivee">Date d’arrivée</label>
+        <label for="dateArrivee">Date d'arrivée</label>
         <input id="dateArrivee" name="dateArrivee" type="date" required />
 
         <label for="dateDepart">Date de départ</label>
@@ -105,7 +97,6 @@
         <label for="phone">Numéro de téléphone</label>
         <div class="row">
           <select id="country" class="country" aria-label="Indicatif pays">
-            <!-- Quelques indicatifs courants, FR par défaut -->
             <option value="+33" selected>🇫🇷 +33 (France)</option>
             <option value="+32">🇧🇪 +32 (Belgique)</option>
             <option value="+41">🇨🇭 +41 (Suisse)</option>
@@ -135,7 +126,7 @@
         <button type="submit">Envoyer</button>
 
         <div class="note">
-          Si vous mettez un <strong>0 initial</strong> (ex. 06…), nous utiliserons l’indicatif sélectionné.
+          Si vous mettez un <strong>0 initial</strong> (ex. 06…), nous utiliserons l'indicatif sélectionné.
           Vous pouvez aussi saisir un <strong>indicatif personnalisé</strong> via « Autre indicatif… ».
         </div>
       </form>
@@ -143,6 +134,9 @@
       <footer>Fonctionne sur iPhone, Android, Windows, macOS &amp; WhatsApp Web.</footer>
     </div>
   </main>
+
+  <!-- IMPORTANT: Importer le module messages.js AVANT le script principal -->
+  <script src="messages.js"></script>
 
   <script>
     const d_adresse = {
@@ -276,7 +270,7 @@
       Droite: {fr: 'Droite', en: 'Right', es: 'Derecha', it: 'Destra', ru: 'Справа' },
       Gauche: {fr: 'Gauche', en: 'Left', es: 'Izquierda', it: 'Sinistra', ru: 'Слева' },
       Face: {fr: 'Face', en: 'Front', es: 'Frente', it: 'Fronte', ru: 'Спереди' },
-      RC: {fr: 'RC', en: 'Ground Floor', es: 'Planta baja', it: 'Piano terra', ru: 'Первый этаж'}
+      RC: {fr: 'RC', en: 'Ground Floor', es: 'Planta baja', it: 'Piano terra', ru: 'Первый этаж'},
     };
 
     function getOrientation(orientation, lang) {
@@ -309,7 +303,6 @@
 
       return `${etage}${suffix} ${orientation}`.trim();
     }
-
 
     function setPressed(btn, pressed) { btn.setAttribute('aria-pressed', pressed ? 'true' : 'false'); }
     function getPressedValue(group) {
@@ -417,227 +410,110 @@
         errorEl.style.display = 'none';
       }
 
-      const villa = getPressedValue(villaGroup) || '';
-      const appartment = (document.getElementById('optionSelect').value || '');
-      const detail_appart = getAppartmentDetail(appartment, language);
-      const digicodeEntree = (document.getElementById('digicodeEntree').value || '');
-      const digicodeAppartement = (document.getElementById('digicodeAppartement').value || '');
-      const dateArrivee = document.getElementById('dateArrivee').value;
-      const dateDepart = document.getElementById('dateDepart').value;
-      const wifi = dict_appartments[appartment]?.wifi || '';
-      const password_wifi = dict_appartments[appartment]?.password_wifi || '';
-      const lockIcon = '\u{1F510}';
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ Envoi en cours...";
 
-      const base = new URL('.', location.href).href;
-      const contratUrl = base + 'contrat.html';
+      try {
+        const villa = getPressedValue(villaGroup) || '';
+        const appartment = (document.getElementById('optionSelect').value || '');
+        const detail_appart = getAppartmentDetail(appartment, language);
+        const digicodeEntree = (document.getElementById('digicodeEntree').value || '');
+        const digicodeAppartement = (document.getElementById('digicodeAppartement').value || '');
+        const dateArrivee = document.getElementById('dateArrivee').value;
+        const dateDepart = document.getElementById('dateDepart').value;
+        const wifi = dict_appartments[appartment]?.wifi || '';
+        const password_wifi = dict_appartments[appartment]?.password_wifi || '';
 
-      function getWelcomeMessage() {
-        if (language === 'fr') {
-          return `Bonjour ${name},
+        // 1. Générer le message COMPLET pour le stockage
+        const messageComplet = getWelcomeMessage({
+          language,
+          name,
+          villa,
+          adresse: d_adresse[villa],
+          appartment,
+          detail_appart,
+          digicodeEntree,
+          digicodeAppartement,
+          dateArrivee,
+          dateDepart,
+          wifi,
+          password_wifi
+        });
+        
+        const data = {
+          message: messageComplet,
+          digicodeImmeuble: digicodeEntree,
+          digicodeAppartement,
+          wifi,
+          wifiPass: password_wifi
+        };
 
-Nous avons l’immense plaisir de vous accueillir dans notre résidence, la ${villa} Cannes!
-Nous souhaitons que votre séjour se déroule de manière des plus agréables. Permettez-nous de vous fournir toutes les informations importantes lors de votre séjour :
+        // 2. Créer le lien court
+        const response = await fetch("/api/create-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
 
-— Adresse : ${d_adresse[villa]}
-— Appartement : ${appartment}, ${detail_appart}
-
-— Code d’accès à l’immeuble :
-                                  ${digicodeEntree} #
-— Code d’accès à votre apt :
-                                  ${digicodeAppartement} ${lockIcon}
-
-— Date d'Arrivée : ${dateArrivee}
-— Date de Départ : ${dateDepart}
-
-— Wifi : ${wifi}
-— Mot de Passe Wifi : ${password_wifi}
-
-Pour refermer : faire le code et appuyer sur le cadenas 5 secondes
-Avant d’entrer votre code d’accès pour accéder à l’appartement, veuillez patienter jusqu’à ce que le clavier numérique s’illumine, s’il vous plaît. Cela indique que le clavier est prêt à recevoir votre code.
-
-Afin d’assurer votre confort et votre satisfaction, nous tenons à vous rappeler les points suivants :
-  1. Entretien : Nous vous prions de bien vouloir prendre soin de l’appartement pendant toute la durée de votre séjour. Lors de votre départ, nous vous saurions gré de bien vouloir effectuer la vaisselle, vider les poubelles et laisser l’appartement dans l’état où vous l’avez trouvé.
-  2. Caution : Nous tenons à vous informer qu’une empreinte de votre carte bancaire sera réalisée lors de votre arrivée. Soyez assuré(e)(s) qu’aucun montant ne sera prélevé. Cette empreinte servira uniquement de garantie en cas de dommages éventuels.
-  3. Respect du voisinage : Nous vous prions de faire preuve de courtoisie envers les autres résidents de la ${villa}. Afin de préserver la tranquillité de tous, veuillez éviter les nuisances sonores, en particulier après 22h.
-
-Cher client, chère cliente, chers clients, nous sommes véritablement honorés de vous accueillir à la ${villa} Cannes.
-Notre équipe reste à votre entière disposition pour répondre à vos questions et vous assister tout au long de votre séjour.
-Profitez pleinement de votre expérience à la ${villa} Cannes. Avec nos salutations les plus respectueuses,
-
-L’équipe de la ${villa} Cannes`
-        } else if (language === 'en') {
-          return `Hello ${name},
-
-We are delighted to welcome you to our residence, ${villa} Cannes!
-We hope your stay will be as pleasant as possible. Please find below all the important information for your stay:
-
-— Address: ${d_adresse[villa]}
-— Apartment: ${appartment}, ${detail_appart}
-
-— Building access code: ${digicodeEntree} #
-— Your apartment access code: ${digicodeAppartement} ${lockIcon}
-
-— Arrival Date: ${dateArrivee}
-— Departure Date: ${dateDepart}
-
-— Wifi : ${wifi}
-— Wifi Password : ${password_wifi}
-
-To close the door: enter the code and press the lock button for 5 seconds.
-Before entering your access code to unlock the apartment door, please wait for the keypad to light up. This indicates that it is ready to receive your code.
-
-To ensure your comfort and satisfaction, please note the following:
-  1. Maintenance: We kindly ask you to take care of the apartment throughout your stay. Upon departure, please wash the dishes, empty the trash, and leave the apartment in the same condition in which you found it.
-  2. Security deposit: Please note that a pre-authorization will be taken on your credit card upon arrival. Rest assured, no amount will be charged. This pre-authorization only serves as a guarantee in case of potential damages.
-  3. Respect for neighbors: We kindly ask that you show consideration for the other residents of ${villa}. To preserve everyone’s peace and quiet, please avoid excessive noise, especially after 10 p.m.
-
-Dear guest(s), we are truly honored to welcome you to ${villa} Cannes.
-Our team remains at your full disposal for any questions or assistance throughout your stay.
-We wish you a wonderful experience at ${villa} Cannes.
-
-Warm regards,
-The ${villa} Cannes Team`
-        } else if (language === 'es') {
-          return `Hola ${name},
-
-Tenemos el gran placer de darle la bienvenida a nuestra residencia, ${villa} Cannes!
-Deseamos que su estancia sea lo más agradable posible. Permítanos proporcionarle toda la información importante para su estancia:
-
-— Dirección: ${d_adresse[villa]}
-— Apartamento: ${appartment}, ${detail_appart}
-
-— Código de acceso al edificio: ${digicodeEntree} #
-— Código de acceso a su apartamento: ${digicodeAppartement} ${lockIcon}
-
-— Fecha de llegada: ${dateArrivee}
-— Fecha de salida: ${dateDepart}
-
-— Wifi: ${wifi}
-— Contraseña del Wifi: ${password_wifi}
-
-Para cerrar la puerta: introduzca el código y mantenga pulsado el botón del candado durante 5 segundos.
-Antes de introducir su código de acceso para entrar en el apartamento, por favor espere a que el teclado numérico se ilumine. Esto indica que está listo para recibir su código.
-
-Para garantizar su comodidad y satisfacción, queremos recordarle los siguientes puntos:
-  1. Mantenimiento: Le rogamos cuidar del apartamento durante toda su estancia. Al marcharse, le agradeceríamos que lavara los platos, vaciara la basura y dejara el apartamento en el mismo estado en el que lo encontró.
-  2. Depósito de garantía: Le informamos de que se realizará una preautorización en su tarjeta de crédito a su llegada. Le aseguramos que no se efectuará ningún cargo. Esta preautorización se utiliza únicamente como garantía en caso de posibles daños.
-  3. Respeto al vecindario: Le pedimos que sea considerado(a) con los demás residentes de ${villa}. Para preservar la tranquilidad de todos, evite ruidos molestos, especialmente después de las 22:00.
-
-Estimado/a cliente, estamos realmente honrados de darle la bienvenida a ${villa} Cannes.
-Nuestro equipo queda a su entera disposición para responder a sus preguntas y asistirle durante toda su estancia.
-Le deseamos una maravillosa experiencia en ${villa} Cannes.
-
-Con nuestros más cordiales saludos,
-El equipo de ${villa} Cannes`
-        } else if (language === 'it') {
-          return `Caro/a ${name},
-
-Siamo estremamente lieti di darLe il benvenuto nella nostra residenza, ${villa} Cannes!
-Desideriamo che il Suo soggiorno sia il più piacevole possibile. Permetta che Le forniamo tutte le informazioni importanti per la Sua permanenza:
-
-— Indirizzo: ${d_adresse[villa]}
-— Appartamento: ${appartment}, ${detail_appart}
-
-— Codice di accesso all’edificio: ${digicodeEntree} #
-— Codice di accesso al Suo appartamento: ${digicodeAppartement} ${lockIcon}
-
-— Data di arrivo: ${dateArrivee}
-— Data di partenza: ${dateDepart}
-
-— Wifi: ${wifi}
-— Password Wifi: ${password_wifi}
-
-Per chiudere la porta: inserisca il codice e tenga premuto il pulsante del lucchetto per 5 secondi.
-Prima di inserire il Suo codice di accesso per entrare nell’appartamento, attenda gentilmente che il tastierino numerico si illumini. Questo indica che è pronto a ricevere il codice.
-
-Per garantirLe il massimo comfort e soddisfazione, La invitiamo a prendere nota dei seguenti punti:
-  1. Manutenzione: La preghiamo di avere cura dell’appartamento durante tutto il soggiorno. Al momento della partenza, La ringrazieremmo se potesse lavare i piatti, svuotare la spazzatura e lasciare l’appartamento nelle stesse condizioni in cui lo ha trovato.
-  2. Deposito cauzionale: La informiamo che, all’arrivo, verrà effettuata una pre-autorizzazione sulla Sua carta di credito. Le assicuriamo che non verrà addebitato alcun importo. La pre-autorizzazione serve esclusivamente come garanzia in caso di eventuali danni.
-  3. Rispetto del vicinato: La preghiamo di mostrare cortesia nei confronti degli altri residenti di ${villa}. Per garantire la tranquillità di tutti, eviti rumori molesti, soprattutto dopo le 22:00.
-
-Gentile cliente, siamo davvero onorati di accoglierLa presso ${villa} Cannes.
-Il nostro team è a Sua completa disposizione per qualsiasi domanda o assistenza durante il Suo soggiorno.
-Le auguriamo una splendida esperienza presso ${villa} Cannes.
-
-Con i nostri più cordiali saluti,
-Il team di ${villa} Cannes`
-        } else if (language === 'ru') {
-          return `Уважаемый(ая) ${name},
-
-Мы рады приветствовать вас в нашей резиденции ${villa} Cannes!
-Надеемся, что ваше пребывание будет максимально комфортным. Пожалуйста, ознакомьтесь с важной информацией, которая пригодится вам во время проживания:
-
-— Адрес: ${d_adresse[villa]}
-— Апартаменты: ${appartment}, ${detail_appart}
-
-— Код доступа к зданию: ${digicodeEntree} #
-— Код доступа в ваши апартаменты: ${digicodeAppartement} ${lockIcon}
-
-— Дата заезда: ${dateArrivee}
-— Дата выезда: ${dateDepart}
-
-— Wi-Fi: ${wifi}
-— Пароль Wi-Fi: ${password_wifi}
-
-Чтобы закрыть дверь: введите код и удерживайте кнопку с замком 5 секунд.
-Перед вводом кода для входа, пожалуйста, подождите, пока не загорится клавиатура — это означает, что она готова принять код.
-
-Для вашего удобства и комфорта, просим обратить внимание на следующие моменты:
-  1. Уборка: Пожалуйста, бережно относитесь к апартаментам на протяжении всего проживания. При выезде мы будем признательны, если вы помоете посуду, выбросите мусор и оставите апартаменты в таком же состоянии, в каком они были при заселении.
-  2. Депозит: Обращаем ваше внимание, что при заселении будет выполнена предварительная авторизация на вашей банковской карте. Денежные средства списаны не будут. Эта операция служит лишь гарантией на случай возможного ущерба.
-  3. Тишина и уважение к соседям: Просим соблюдать тишину и уважать других жителей ${villa}. Пожалуйста, избегайте шума, особенно после 22:00.
-
-Уважаемые гости, для нас большая честь принимать вас в ${villa} Cannes.
-Наша команда всегда к вашим услугам и готова помочь вам в любое время.
-Желаем вам приятного пребывания в ${villa} Cannes!
-
-С уважением,
-Команда ${villa} Cannes`
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Erreur HTTP: ${response.status}`);
         }
-        return '';
+
+        const result = await response.json();
+        
+        if (!result.url) {
+          throw new Error("URL non reçue du serveur");
+        }
+        
+        const previewUrl = result.url;
+
+        // 3. Générer le message MINI pour l'envoi (plus court)
+        const messageMini = getWelcomeMessageMini({
+          language,
+          name,
+          villa,
+          adresse: d_adresse[villa],
+          appartment,
+          detail_appart,
+          digicodeEntree,
+          digicodeAppartement,
+          dateArrivee,
+          dateDepart,
+          wifi,
+          password_wifi,
+          previewUrl
+        });
+
+        // 4. Encoder et envoyer le message MINI
+        const encoded = encodeURIComponent(messageMini);
+
+        function openWhatsApp() {
+          const waUrl = `https://wa.me/${digits}?text=${encoded}`;
+          window.location.href = waUrl;
+          setTimeout(() => {
+            const deepLink = `whatsapp://send?phone=${digits}&text=${encoded}`;
+            window.location.href = deepLink;
+          }, 600);
+        }
+        
+        function openSMS() {
+          const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const smsUrl = isiOS ? `sms:${digits}&body=${encoded}` : `sms:${digits}?body=${encoded}`;
+          window.location.href = smsUrl;
+        }
+
+        if (channel === 'sms') openSMS(); else openWhatsApp();
+
+      } catch (error) {
+        console.error("Erreur complète:", error);
+        errorEl.textContent = `Erreur lors de l'envoi : ${error.message}`;
+        errorEl.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
       }
-
-      const message = getWelcomeMessage();
-      
-      const data = {
-        message,
-        digicodeImmeuble: digicodeEntree,
-        digicodeAppartement,
-        wifi,
-        wifiPass: password_wifi
-      };
-
-      const response = await fetch("/api/create-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      const result = await response.json();
-      const previewUrl = result.url;
-
-      const finalMessage = `${message}
-
-      Plus d’informations ici :
-      ${previewUrl}`;
-
-      const encoded = encodeURIComponent(finalMessage);
-
-      function openWhatsApp() {
-        const waUrl = `https://wa.me/${digits}?text=${encoded}`;
-        window.location.href = waUrl;
-        setTimeout(() => {
-          const deepLink = `whatsapp://send?phone=${digits}&text=${encoded}`;
-          window.location.href = deepLink;
-        }, 600);
-      }
-      function openSMS() {
-        const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const smsUrl = isiOS ? `sms:${digits}&body=${encoded}` : `sms:${digits}?body=${encoded}`;
-        window.location.href = smsUrl;
-      }
-
-      if (channel === 'sms') openSMS(); else openWhatsApp();
     });
   </script>
 </body>
