@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Générateur de Messages</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; background:#0b0d12; color:#eef1f6; display:flex; min-height:100dvh; }
+    .wrap { margin:auto; width:min(720px, 92vw); }
+    .card { background:#121722; border:1px solid #222938; border-radius:16px; padding:24px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    h1 { font-size:clamp(22px, 3.5vw, 28px); margin:0 0 8px; }
+    p.hint { margin:0 0 18px; opacity:.85; }
+    label { display:block; margin:14px 0 6px; font-weight:600; }
+    input, select, button, .row { width:100%; }
+    input, select { background:#0e121a; color:#eef1f6; border:1px solid #283042; border-radius:12px; padding:12px 14px; font-size:16px; outline:none; }
+    input:focus, select:focus { border-color:#3e7aff; box-shadow:0 0 0 3px rgba(62,122,255,.2); }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+    .country { flex: 1.2; }
+    .phone { flex: 2; }
+    button {
+      margin-top:16px; background:#3e7aff; color:white; border:none; padding:13px 16px;
+      border-radius:12px; font-size:16px; font-weight:700; cursor:pointer;
+    }
+    button:active { transform: translateY(1px); }
+    .note { font-size:13px; opacity:.75; margin-top:10px; }
+    .error { color:#ff7b7b; margin-top:10px; display:none; }
+    footer { margin-top:16px; font-size:12px; opacity:.6; text-align:center; }
+
+    /* Segmented button groups */
+    .seg { display:flex; gap:8px; }
+    .seg button {
+      flex:1; margin-top:0; background:#0e121a; border:1px solid #283042; color:#eef1f6;
+      padding:10px 12px; border-radius:10px; font-weight:600; cursor:pointer;
+    }
+    .seg button[aria-pressed="true"] { background:#3e7aff; color:#fff; border-color:#3e7aff; }
+    .seg button:focus-visible { outline: 3px solid rgba(62,122,255,.5); outline-offset:2px; }
+
+    /* Custom country code input */
+    #customCodeWrap { display:none; }
+    #customCode { letter-spacing: .5px; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="card">
+      <h1>Messages : Villa Marina / Sephora</h1>
+      <p class="hint">Choisissez la villa, l'appartement, le canal, puis saisissez le nom, les codes et le numéro. Nous ouvrirons l’app correspondante avec le message prérempli.</p>
+
+      <form id="wappForm">
+        <!-- Boutons dépendants -->
+        <label>Villa</label>
+        <div class="seg" id="villaGroup" role="group" aria-label="Choix de la villa">
+          <button type="button" data-value="Villa Marina" aria-pressed="true">Villa Marina</button>
+          <button type="button" data-value="Villa Sephora" aria-pressed="false">Villa Sephora</button>
+        </div>
+
+        <label style="margin-top:12px">Appartement</label>
+        <select id="optionSelect" aria-label="Choix d'option"></select>
+
+        <label style="margin-top:12px">Canal</label>
+        <div class="seg" id="channelGroup" role="group" aria-label="Choix du canal">
+          <button type="button" data-value="whatsapp" aria-pressed="true">WhatsApp</button>
+          <button type="button" data-value="sms" aria-pressed="false">Message (SMS)</button>
+        </div>
+
+        <!-- <label style="margin-top:12px">Langue</label>
+        <div class="seg" id="language_message" role="group" aria-label="Choix du language">
+          <button type="button" data-value="fr" aria-pressed="true">Français</button>
+          <button type="button" data-value="en" aria-pressed="false">Anglais</button>
+          <button type="button" data-value="es" aria-pressed="false">Espagnol</button>
+          <button type="button" data-value="it" aria-pressed="false">Italien</button>
+          <button type="button" data-value="ru" aria-pressed="false">Russe</button>
+        </div> -->
+
+        <label for="language_message">Langue du message</label>
+        <div class="row">
+          <select id="language_message" class="language" aria-label="Choix de la langue">
+            <option value="fr" selected>🇫🇷 Français</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="ru">🇷🇺 Русский</option>
+          </select>
+        </div>
+
+        <hr style="margin:18px 0;border:none;border-top:1px solid #222938" />
+
+        <label for="name">Nom</label>
+        <input id="name" name="name" type="text" placeholder="Ex. Lenny Zerbib" autocomplete="name" required />
+
+        <label for="digicodeEntree">Digicode Immeuble</label>
+        <input id="digicodeEntree" name="digicodeEntree" type="tel" inputmode="numeric" pattern="\d*" placeholder="Ex. 1234" />
+
+        <label for="digicodeAppartement">Digicode Appartement</label>
+        <input id="digicodeAppartement" name="digicodeAppartement" type="tel" inputmode="numeric" pattern="\d*" placeholder="Ex. 5678" />
+
+        <label for="dateArrivee">Date d’arrivée</label>
+        <input id="dateArrivee" name="dateArrivee" type="date" required />
+
+        <label for="dateDepart">Date de départ</label>
+        <input id="dateDepart" name="dateDepart" type="date" required />
+
+        <label for="phone">Numéro de téléphone</label>
+        <div class="row">
+          <select id="country" class="country" aria-label="Indicatif pays">
+            <!-- Quelques indicatifs courants, FR par défaut -->
+            <option value="+33" selected>🇫🇷 +33 (France)</option>
+            <option value="+32">🇧🇪 +32 (Belgique)</option>
+            <option value="+41">🇨🇭 +41 (Suisse)</option>
+            <option value="+39">🇮🇹 +39 (Italie)</option>
+            <option value="+34">🇪🇸 +34 (Espagne)</option>
+            <option value="+49">🇩🇪 +49 (Allemagne)</option>
+            <option value="+44">🇬🇧 +44 (R.-Uni)</option>
+            <option value="+1">🇺🇸 +1 (USA/Canada)</option>
+            <option value="+212">🇲🇦 +212 (Maroc)</option>
+            <option value="+216">🇹🇳 +216 (Tunisie)</option>
+            <option value="+213">🇩🇿 +213 (Algérie)</option>
+            <option value="+971">🇦🇪 +971 (EAU)</option>
+            <option value="+91">🇮🇳 +91 (Inde)</option>
+            <option value="+81">🇯🇵 +81 (Japon)</option>
+            <option value="+61">🇦🇺 +61 (Australie)</option>
+            <option value="__custom">✏️ Autre indicatif…</option>
+          </select>
+          <input id="phone" class="phone" name="phone" type="tel" inputmode="tel" placeholder="Ex. +33612345678 ou 0612345678" required />
+        </div>
+
+        <div id="customCodeWrap" class="row" aria-hidden="true">
+          <input id="customCode" class="country" type="text" inputmode="tel" placeholder="Entrez un indicatif au format +XXX (ex. +380)" />
+        </div>
+
+        <div id="error" class="error" role="alert">Veuillez entrer un numéro valide.</div>
+
+        <button type="submit">Envoyer</button>
+
+        <div class="note">
+          Si vous mettez un <strong>0 initial</strong> (ex. 06…), nous utiliserons l’indicatif sélectionné.
+          Vous pouvez aussi saisir un <strong>indicatif personnalisé</strong> via « Autre indicatif… ».
+        </div>
+      </form>
+
+      <footer>Fonctionne sur iPhone, Android, Windows, macOS &amp; WhatsApp Web.</footer>
+    </div>
+  </main>
+
+  <script>
+    const d_adresse = {
+      'Villa Marina': '35 Avenue de Grasse, 06400 Cannes',
+      'Villa Sephora': '27 Rue Meynadier, 06400 Cannes',
+    };
+
+    const dict_appartments = {
+      'Little Havana': {
+        villa: 'Villa Marina',
+        etage: '1',
+        orientation: 'Droite',
+        wifi: 'Lan-1d',
+        password_wifi: 'Siduzt-47@',
+      },
+      'Downtown': {
+        villa: 'Villa Marina',
+        etage: '2',
+        orientation: 'Face',
+        wifi: 'Lan-2f',
+        password_wifi: 'Szkqjd-28@',
+      },
+      'Design District': {
+        villa: 'Villa Marina',
+        etage: '2',
+        orientation: 'Droite',
+        wifi: 'Lan-2d',
+        password_wifi: 'Qkfhsu-95@',
+      },
+      'Coconut Grove Terrasse': {
+        villa: 'Villa Marina',
+        etage: '1',
+        orientation: 'Face',
+        wifi: 'Lan-1f',
+        password_wifi: 'Dfkshr-98@',
+      },
+      'South Beach Terrasse': {
+        villa: 'Villa Marina',
+        etage: '3',
+        orientation: 'Droite',
+        wifi: 'Lan-3',
+        password_wifi: 'Dbskgr-34@',
+      },
+      'Wynwood Loft': {
+        villa: 'Villa Marina',
+        etage: '0',
+        orientation: 'RC',
+        wifi: 'Lan-Rdc',
+        password_wifi: 'Dghtod-45@',
+      },
+      'Villa Marina Building': {
+        villa: 'Villa Marina',
+        etage: '0',
+        orientation: 'RC',
+        wifi: 'Lan-Rdc',
+        password_wifi: 'Dghtod-45@',
+      },
+      'Kos': {
+        villa: 'Villa Sephora',
+        etage: '1',
+        orientation: 'Droite',
+        wifi: 'Lan KOS',
+        password_wifi: 'xI0$ufl~',
+      },
+      'Kea': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Droite',
+        wifi: 'Lan KEA',
+        password_wifi: 'fbypl7q.',
+      },
+      'Samos': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Milieu droit',
+        wifi: 'Lan SAMOS',
+        password_wifi: 'gyo4j!l|',
+      },
+      'Symi': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Fond gauche',
+        wifi: 'Lan SYMI',
+        password_wifi: "9tav+h'o",
+      },
+      'Milos': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Fond droite',
+        wifi: 'Lan MILOS',
+        password_wifi: 'e:yz7ceQ',
+      },
+      'Rhodes': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: '2ème gauche',
+        wifi: 'Lan RHODES',
+        password_wifi: '.$:qc+@q',
+      },
+      'Santorin': {
+        villa: 'Villa Sephora',
+        etage: '1',
+        orientation: 'Gauche',
+        wifi: 'Lan SANTORIN',
+        password_wifi: 'ft;o?cm7',
+      },
+      'Corfou': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Gauche',
+        wifi: 'Lan COURFOU',
+        password_wifi: 'tr+cn^t1',
+      },
+      'Mykonos': {
+        villa: 'Villa Sephora',
+        etage: '1',
+        orientation: 'Face',
+        wifi: 'Lan MYKONOS',
+        password_wifi: 'Alo*LDJP',
+      },
+    };
+
+    const d_suffix = {
+      '0': { fr: '',   en: '',   es: '',  it: '',  ru: '' },
+      '1': { fr: 'er', en: 'st', es: 'º', it: 'º', ru: 'й' },
+      '2': { fr: 'e',  en: 'nd', es: 'º', it: 'º', ru: 'й' },
+      '3': { fr: 'e',  en: 'rd', es: 'º', it: 'º', ru: 'й' },
+    };
+
+    const ORIENTATION = {
+      Droite: {fr: 'Droite', en: 'Right', es: 'Derecha', it: 'Destra', ru: 'Справа' },
+      Gauche: {fr: 'Gauche', en: 'Left', es: 'Izquierda', it: 'Sinistra', ru: 'Слева' },
+      Face: {fr: 'Face', en: 'Front', es: 'Frente', it: 'Fronte', ru: 'Спереди' },
+      RC: {fr: 'RC', en: 'Ground Floor', es: 'Planta baja', it: 'Piano terra', ru: 'Первый этаж'}
+    };
+
+    function getOrientation(orientation, lang) {
+      return ORIENTATION[orientation]?.[lang] || orientation;
+    }
+
+    function getAppartmentsByVilla(villaName) {
+      const result = [];
+      for (let key in dict_appartments) {
+        const value = dict_appartments[key];
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          if (value.villa === villaName) {
+            result.push(key);
+          }
+        }
+      }
+      return result;
+    }
+
+    function getAppartmentDetail(option, language) {
+      const raw = dict_appartments[option]['etage'];
+      const etage = (!raw || raw == 0) ? '' : raw;
+
+      const orientation = getOrientation(dict_appartments[option]['orientation'], language) || '';
+      const suffix = d_suffix[etage]?.[language] || '';
+
+      if (language === 'ru' && etage !== '') {
+        return `${etage}-${suffix} ${orientation}`.trim();
+      }
+
+      return `${etage}${suffix} ${orientation}`.trim();
+    }
+
+
+    function setPressed(btn, pressed) { btn.setAttribute('aria-pressed', pressed ? 'true' : 'false'); }
+    function getPressedValue(group) {
+      const active = group.querySelector('button[aria-pressed="true"]');
+      return active ? active.dataset.value : null;
+    }
+    function makeSegmentedInteractive(group) {
+      group.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn || !group.contains(btn)) return;
+        group.querySelectorAll('button').forEach(x => setPressed(x, false));
+        setPressed(btn, true);
+      });
+    }
+
+    const villaGroup = document.getElementById('villaGroup');
+    const optionSelect = document.getElementById('optionSelect');
+    const channelGroup = document.getElementById('channelGroup');
+
+    function refreshOptions() {
+      const villa = getPressedValue(villaGroup);
+      const list = villa === 'Villa Sephora' ? getAppartmentsByVilla('Villa Sephora') :
+        getAppartmentsByVilla('Villa Marina Building').concat(getAppartmentsByVilla('Villa Marina'));
+      optionSelect.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '— Choisir —';
+      optionSelect.appendChild(placeholder);
+      list.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v; optionSelect.appendChild(opt);
+      });
+      optionSelect.selectedIndex = 0;
+    }
+
+    // init segmented groups & options
+    makeSegmentedInteractive(villaGroup);
+    makeSegmentedInteractive(channelGroup);
+    refreshOptions();
+
+    // Quand on change de villa, mettre à jour la liste
+    villaGroup.addEventListener('click', (e) => {
+      if (e.target.closest('button')) refreshOptions();
+    });
+
+    // --- Phone normalization ---
+    function normalizeNumber(raw, countryCode) {
+      let s = (raw || '').trim();
+      s = s.replace(/[^\d+]/g, '');
+      if (s.startsWith('00')) s = '+' + s.slice(2);
+      if (s.startsWith('+')) return s.replace(/\++/g, '+');
+      if (s.startsWith('0')) return countryCode + s.slice(1);
+      return countryCode + s;
+    }
+    function toE164Digits(s) { return (s || '').replace(/\D/g, ''); }
+
+    // --- Custom country code handling ---
+    const countrySel = document.getElementById('country');
+    const customWrap = document.getElementById('customCodeWrap');
+    const customInput = document.getElementById('customCode');
+
+    function currentDialCode() {
+      if (countrySel.value === '__custom') return (customInput.value || '').trim();
+      return countrySel.value;
+    }
+    function validateDialCode(code) { return /^\+\d{1,4}$/.test(code); }
+
+    countrySel.addEventListener('change', () => {
+      const isCustom = countrySel.value === '__custom';
+      customWrap.style.display = isCustom ? 'flex' : 'none';
+      customWrap.setAttribute('aria-hidden', isCustom ? 'false' : 'true');
+      if (isCustom) customInput.focus();
+    });
+
+    // --- Submit handling ---
+    document.getElementById('wappForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const name = (document.getElementById('name').value || '').trim();
+      const phoneRaw = document.getElementById('phone').value;
+      const channel = getPressedValue(channelGroup) || 'whatsapp';
+      const languageSelect = document.getElementById('language_message');
+      const language = languageSelect.value || 'fr';
+
+      let dial = currentDialCode();
+      if (countrySel.value === '__custom') {
+        if (!validateDialCode(dial)) {
+          const errorEl = document.getElementById('error');
+          errorEl.textContent = 'Veuillez saisir un indicatif personnalisé valide (format +XXX).';
+          errorEl.style.display = 'block';
+          return;
+        }
+      } else if (!dial) {
+        dial = '+33';
+      }
+
+      const normalized = normalizeNumber(phoneRaw, dial || '+33');
+      const digits = toE164Digits(normalized);
+
+      const errorEl = document.getElementById('error');
+      if (!digits || digits.length < 8) {
+        errorEl.textContent = 'Veuillez entrer un numéro valide.';
+        errorEl.style.display = 'block';
+        return;
+      } else {
+        errorEl.style.display = 'none';
+      }
+
+      const villa = getPressedValue(villaGroup) || '';
+      const appartment = (document.getElementById('optionSelect').value || '');
+      const detail_appart = getAppartmentDetail(appartment, language);
+      const digicodeEntree = (document.getElementById('digicodeEntree').value || '');
+      const digicodeAppartement = (document.getElementById('digicodeAppartement').value || '');
+      const dateArrivee = document.getElementById('dateArrivee').value;
+      const dateDepart = document.getElementById('dateDepart').value;
+      const wifi = dict_appartments[appartment]?.wifi || '';
+      const password_wifi = dict_appartments[appartment]?.password_wifi || '';
+      const lockIcon = '\u{1F510}';
+
+      const base = new URL('.', location.href).href;
+      const contratUrl = base + 'contrat.html';
+
+      function getWelcomeMessage() {
+        if (language === 'fr') {
+          return `Bonjour ${name},
+
+Nous avons l’immense plaisir de vous accueillir dans notre résidence, la ${villa} Cannes!
+Nous souhaitons que votre séjour se déroule de manière des plus agréables. Permettez-nous de vous fournir toutes les informations importantes lors de votre séjour :
+
+— Adresse : ${d_adresse[villa]}
+— Appartement : ${appartment}, ${detail_appart}
+
+— Code d’accès à l’immeuble :
+                                  ${digicodeEntree} #
+— Code d’accès à votre apt :
+                                  ${digicodeAppartement} ${lockIcon}
+
+— Date d'Arrivée : ${dateArrivee}
+— Date de Départ : ${dateDepart}
+
+— Wifi : ${wifi}
+— Mot de Passe Wifi : ${password_wifi}
+
+Pour refermer : faire le code et appuyer sur le cadenas 5 secondes
+Avant d’entrer votre code d’accès pour accéder à l’appartement, veuillez patienter jusqu’à ce que le clavier numérique s’illumine, s’il vous plaît. Cela indique que le clavier est prêt à recevoir votre code.
+
+Afin d’assurer votre confort et votre satisfaction, nous tenons à vous rappeler les points suivants :
+  1. Entretien : Nous vous prions de bien vouloir prendre soin de l’appartement pendant toute la durée de votre séjour. Lors de votre départ, nous vous saurions gré de bien vouloir effectuer la vaisselle, vider les poubelles et laisser l’appartement dans l’état où vous l’avez trouvé.
+  2. Caution : Nous tenons à vous informer qu’une empreinte de votre carte bancaire sera réalisée lors de votre arrivée. Soyez assuré(e)(s) qu’aucun montant ne sera prélevé. Cette empreinte servira uniquement de garantie en cas de dommages éventuels.
+  3. Respect du voisinage : Nous vous prions de faire preuve de courtoisie envers les autres résidents de la ${villa}. Afin de préserver la tranquillité de tous, veuillez éviter les nuisances sonores, en particulier après 22h.
+
+Cher client, chère cliente, chers clients, nous sommes véritablement honorés de vous accueillir à la ${villa} Cannes.
+Notre équipe reste à votre entière disposition pour répondre à vos questions et vous assister tout au long de votre séjour.
+Profitez pleinement de votre expérience à la ${villa} Cannes. Avec nos salutations les plus respectueuses,
+
+L’équipe de la ${villa} Cannes`
+        } else if (language === 'en') {
+          return `Hello ${name},
+
+We are delighted to welcome you to our residence, ${villa} Cannes!
+We hope your stay will be as pleasant as possible. Please find below all the important information for your stay:
+
+— Address: ${d_adresse[villa]}
+— Apartment: ${appartment}, ${detail_appart}
+
+— Building access code: ${digicodeEntree} #
+— Your apartment access code: ${digicodeAppartement} ${lockIcon}
+
+— Arrival Date: ${dateArrivee}
+— Departure Date: ${dateDepart}
+
+— Wifi : ${wifi}
+— Wifi Password : ${password_wifi}
+
+To close the door: enter the code and press the lock button for 5 seconds.
+Before entering your access code to unlock the apartment door, please wait for the keypad to light up. This indicates that it is ready to receive your code.
+
+To ensure your comfort and satisfaction, please note the following:
+  1. Maintenance: We kindly ask you to take care of the apartment throughout your stay. Upon departure, please wash the dishes, empty the trash, and leave the apartment in the same condition in which you found it.
+  2. Security deposit: Please note that a pre-authorization will be taken on your credit card upon arrival. Rest assured, no amount will be charged. This pre-authorization only serves as a guarantee in case of potential damages.
+  3. Respect for neighbors: We kindly ask that you show consideration for the other residents of ${villa}. To preserve everyone’s peace and quiet, please avoid excessive noise, especially after 10 p.m.
+
+Dear guest(s), we are truly honored to welcome you to ${villa} Cannes.
+Our team remains at your full disposal for any questions or assistance throughout your stay.
+We wish you a wonderful experience at ${villa} Cannes.
+
+Warm regards,
+The ${villa} Cannes Team`
+        } else if (language === 'es') {
+          return `Hola ${name},
+
+Tenemos el gran placer de darle la bienvenida a nuestra residencia, ${villa} Cannes!
+Deseamos que su estancia sea lo más agradable posible. Permítanos proporcionarle toda la información importante para su estancia:
+
+— Dirección: ${d_adresse[villa]}
+— Apartamento: ${appartment}, ${detail_appart}
+
+— Código de acceso al edificio: ${digicodeEntree} #
+— Código de acceso a su apartamento: ${digicodeAppartement} ${lockIcon}
+
+— Fecha de llegada: ${dateArrivee}
+— Fecha de salida: ${dateDepart}
+
+— Wifi: ${wifi}
+— Contraseña del Wifi: ${password_wifi}
+
+Para cerrar la puerta: introduzca el código y mantenga pulsado el botón del candado durante 5 segundos.
+Antes de introducir su código de acceso para entrar en el apartamento, por favor espere a que el teclado numérico se ilumine. Esto indica que está listo para recibir su código.
+
+Para garantizar su comodidad y satisfacción, queremos recordarle los siguientes puntos:
+  1. Mantenimiento: Le rogamos cuidar del apartamento durante toda su estancia. Al marcharse, le agradeceríamos que lavara los platos, vaciara la basura y dejara el apartamento en el mismo estado en el que lo encontró.
+  2. Depósito de garantía: Le informamos de que se realizará una preautorización en su tarjeta de crédito a su llegada. Le aseguramos que no se efectuará ningún cargo. Esta preautorización se utiliza únicamente como garantía en caso de posibles daños.
+  3. Respeto al vecindario: Le pedimos que sea considerado(a) con los demás residentes de ${villa}. Para preservar la tranquilidad de todos, evite ruidos molestos, especialmente después de las 22:00.
+
+Estimado/a cliente, estamos realmente honrados de darle la bienvenida a ${villa} Cannes.
+Nuestro equipo queda a su entera disposición para responder a sus preguntas y asistirle durante toda su estancia.
+Le deseamos una maravillosa experiencia en ${villa} Cannes.
+
+Con nuestros más cordiales saludos,
+El equipo de ${villa} Cannes`
+        } else if (language === 'it') {
+          return `Caro/a ${name},
+
+Siamo estremamente lieti di darLe il benvenuto nella nostra residenza, ${villa} Cannes!
+Desideriamo che il Suo soggiorno sia il più piacevole possibile. Permetta che Le forniamo tutte le informazioni importanti per la Sua permanenza:
+
+— Indirizzo: ${d_adresse[villa]}
+— Appartamento: ${appartment}, ${detail_appart}
+
+— Codice di accesso all’edificio: ${digicodeEntree} #
+— Codice di accesso al Suo appartamento: ${digicodeAppartement} ${lockIcon}
+
+— Data di arrivo: ${dateArrivee}
+— Data di partenza: ${dateDepart}
+
+— Wifi: ${wifi}
+— Password Wifi: ${password_wifi}
+
+Per chiudere la porta: inserisca il codice e tenga premuto il pulsante del lucchetto per 5 secondi.
+Prima di inserire il Suo codice di accesso per entrare nell’appartamento, attenda gentilmente che il tastierino numerico si illumini. Questo indica che è pronto a ricevere il codice.
+
+Per garantirLe il massimo comfort e soddisfazione, La invitiamo a prendere nota dei seguenti punti:
+  1. Manutenzione: La preghiamo di avere cura dell’appartamento durante tutto il soggiorno. Al momento della partenza, La ringrazieremmo se potesse lavare i piatti, svuotare la spazzatura e lasciare l’appartamento nelle stesse condizioni in cui lo ha trovato.
+  2. Deposito cauzionale: La informiamo che, all’arrivo, verrà effettuata una pre-autorizzazione sulla Sua carta di credito. Le assicuriamo che non verrà addebitato alcun importo. La pre-autorizzazione serve esclusivamente come garanzia in caso di eventuali danni.
+  3. Rispetto del vicinato: La preghiamo di mostrare cortesia nei confronti degli altri residenti di ${villa}. Per garantire la tranquillità di tutti, eviti rumori molesti, soprattutto dopo le 22:00.
+
+Gentile cliente, siamo davvero onorati di accoglierLa presso ${villa} Cannes.
+Il nostro team è a Sua completa disposizione per qualsiasi domanda o assistenza durante il Suo soggiorno.
+Le auguriamo una splendida esperienza presso ${villa} Cannes.
+
+Con i nostri più cordiali saluti,
+Il team di ${villa} Cannes`
+        } else if (language === 'ru') {
+          return `Уважаемый(ая) ${name},
+
+Мы рады приветствовать вас в нашей резиденции ${villa} Cannes!
+Надеемся, что ваше пребывание будет максимально комфортным. Пожалуйста, ознакомьтесь с важной информацией, которая пригодится вам во время проживания:
+
+— Адрес: ${d_adresse[villa]}
+— Апартаменты: ${appartment}, ${detail_appart}
+
+— Код доступа к зданию: ${digicodeEntree} #
+— Код доступа в ваши апартаменты: ${digicodeAppartement} ${lockIcon}
+
+— Дата заезда: ${dateArrivee}
+— Дата выезда: ${dateDepart}
+
+— Wi-Fi: ${wifi}
+— Пароль Wi-Fi: ${password_wifi}
+
+Чтобы закрыть дверь: введите код и удерживайте кнопку с замком 5 секунд.
+Перед вводом кода для входа, пожалуйста, подождите, пока не загорится клавиатура — это означает, что она готова принять код.
+
+Для вашего удобства и комфорта, просим обратить внимание на следующие моменты:
+  1. Уборка: Пожалуйста, бережно относитесь к апартаментам на протяжении всего проживания. При выезде мы будем признательны, если вы помоете посуду, выбросите мусор и оставите апартаменты в таком же состоянии, в каком они были при заселении.
+  2. Депозит: Обращаем ваше внимание, что при заселении будет выполнена предварительная авторизация на вашей банковской карте. Денежные средства списаны не будут. Эта операция служит лишь гарантией на случай возможного ущерба.
+  3. Тишина и уважение к соседям: Просим соблюдать тишину и уважать других жителей ${villa}. Пожалуйста, избегайте шума, особенно после 22:00.
+
+Уважаемые гости, для нас большая честь принимать вас в ${villa} Cannes.
+Наша команда всегда к вашим услугам и готова помочь вам в любое время.
+Желаем вам приятного пребывания в ${villa} Cannes!
+
+С уважением,
+Команда ${villa} Cannes`
+        }
+        return '';
+      }
+
+      function buildPreviewUrl(message, digicodeImmeuble, digicodeAppartement, wifi, wifiPass) {
+        const base = new URL('.', location.href).href; // même dossier
+        const page = base + 'message_preview.html';
+
+        const params = new URLSearchParams({
+          message, // PAS de encodeURIComponent ici
+          digicodeImmeuble,
+          digicodeAppartement,
+          wifi,
+          wifiPass
+        });
+
+        return page + '?' + params.toString();
+      }
+
+      const message = getWelcomeMessage();
+
+      const previewUrl = buildPreviewUrl(
+        message,
+        digicodeEntree,
+        digicodeAppartement,
+        wifi,
+        password_wifi
+      );
+
+      const finalMessage = `${message}
+
+      Plus d’informations ici :
+      ${previewUrl}`;
+
+      const encoded = encodeURIComponent(finalMessage);
+
+      function openWhatsApp() {
+        const waUrl = `https://wa.me/${digits}?text=${encoded}`;
+        window.location.href = waUrl;
+        setTimeout(() => {
+          const deepLink = `whatsapp://send?phone=${digits}&text=${encoded}`;
+          window.location.href = deepLink;
+        }, 600);
+      }
+      function openSMS() {
+        const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const smsUrl = isiOS ? `sms:${digits}&body=${encoded}` : `sms:${digits}?body=${encoded}`;
+        window.location.href = smsUrl;
+      }
+
+      if (channel === 'sms') openSMS(); else openWhatsApp();
+    });
+  </script>
+</body>
+</html>
