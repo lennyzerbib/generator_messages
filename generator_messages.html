@@ -145,35 +145,6 @@
   </main>
 
   <script>
-    async function shortenUrl(longUrl) {
-      const BITLY_TOKEN = '39d7745c5d146325674c63a7b96349a260b81fd5';
-
-      try {
-        const res = await fetch('https://api-ssl.bitly.com/v4/shorten', {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + BITLY_TOKEN,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            long_url: longUrl
-          })
-        });
-
-        if (!res.ok) {
-          console.error('Bitly error status:', res.status);
-          return longUrl; // fallback
-        }
-
-        const data = await res.json();
-        return data.link || longUrl;
-      } catch (err) {
-        console.error('Bitly error:', err);
-        return longUrl; // fallback
-      }
-    }
-
-
     const d_adresse = {
       'Villa Marina': '35 Avenue de Grasse, 06400 Cannes',
       'Villa Sephora': '27 Rue Meynadier, 06400 Cannes',
@@ -414,7 +385,7 @@
     });
 
     // --- Submit handling ---
-    document.getElementById('wappForm').addEventListener('submit', async function (e) {
+    document.getElementById('wappForm').addEventListener('submit', function (e) {
       e.preventDefault();
       const name = (document.getElementById('name').value || '').trim();
       const phoneRaw = document.getElementById('phone').value;
@@ -641,7 +612,6 @@ Il team di ${villa} Cannes`
         return page + '?' + params.toString();
       }
 
-
       const message = getWelcomeMessage();
 
       const previewUrl = buildPreviewUrl(
@@ -652,12 +622,10 @@ Il team di ${villa} Cannes`
         password_wifi
       );
 
-      const shortUrl = await shortenUrl(previewUrl);
-
       const finalMessage = `${message}
 
-      ➡️ Plus d’informations ici :
-      ${shortUrl}`;
+      Plus d’informations ici :
+      ${previewUrl}`;
 
       const encoded = encodeURIComponent(finalMessage);
 
