@@ -67,7 +67,11 @@
   <script>
     // Récupère le code court dans l'URL : ?code=Ab3F
     function getCode() {
-      return new URLSearchParams(window.location.search).get("code") || "";
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery = params.get("code");
+      if (fromQuery) return fromQuery;
+      const match = window.location.pathname.match(/\/i\/([a-zA-Z0-9]{4,5})/);
+      return match ? match[1] : "";
     }
 
     async function main() {
