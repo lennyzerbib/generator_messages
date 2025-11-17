@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "src": "/i/([a-zA-Z0-9]{4,5})",
-      "dest": "/message_preview.html?code=$1"
+      "source": "/i/:code",
+      "destination": "/message_preview.html"
     }
   ]
 }
