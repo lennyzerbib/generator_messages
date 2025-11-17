@@ -59,11 +59,17 @@
         <label style="margin-top:12px">Appartement</label>
         <select id="optionSelect" aria-label="Choix d'option"></select>
 
-        <!-- Nouveau : choix du canal -->
         <label style="margin-top:12px">Canal</label>
         <div class="seg" id="channelGroup" role="group" aria-label="Choix du canal">
           <button type="button" data-value="whatsapp" aria-pressed="true">WhatsApp</button>
           <button type="button" data-value="sms" aria-pressed="false">Message (SMS)</button>
+        </div>
+
+        <label style="margin-top:12px">Langue</label>
+        <div class="seg" id="language_message" role="group" aria-label="Choix du language">
+          <button type="button" data-value="fr" aria-pressed="true">Français</button>
+          <button type="button" data-value="en" aria-pressed="false">Anglais</button>
+          <button type="button" data-value="es" aria-pressed="false">Espagnol</button>
         </div>
 
         <hr style="margin:18px 0;border:none;border-top:1px solid #222938" />
@@ -126,7 +132,173 @@
   </main>
 
   <script>
-    // --- Segmented helpers ---
+    const d_adresse = {
+      'Villa Marina': '35 Avenue de Grasse, 06400 Cannes',
+      'Villa Sephora': '27 Rue Meynadier, 06400 Cannes',
+    };
+
+    const dict_appartments = {
+      'Little Havana': {
+        villa: 'Villa Marina',
+        etage: '1',
+        orientation: 'Droite',
+        wifi: 'Lan-1d',
+        password_wifi: 'Siduzt-47@',
+      },
+      'Downtown': {
+        villa: 'Villa Marina',
+        etage: '2',
+        orientation: 'Face',
+        wifi: 'Lan-2f',
+        password_wifi: 'Szkqjd-28@',
+      },
+      'Design District': {
+        villa: 'Villa Marina',
+        etage: '2',
+        orientation: 'Droite',
+        wifi: 'Lan-2d',
+        password_wifi: 'Qkfhsu-95@',
+      },
+      'Coconut Grove Terrasse': {
+        villa: 'Villa Marina',
+        etage: '1',
+        orientation: 'Face',
+        wifi: 'Lan-1f',
+        password_wifi: 'Dfkshr-98@',
+      },
+      'South Beach Terrasse': {
+        villa: 'Villa Marina',
+        etage: '3',
+        orientation: 'Droite',
+        wifi: 'Lan-3',
+        password_wifi: 'Dbskgr-34@',
+      },
+      'Wynwood Loft': {
+        villa: 'Villa Marina',
+        etage: '0',
+        orientation: 'RC',
+        wifi: 'Lan-Rdc',
+        password_wifi: 'Dghtod-45@',
+      },
+      'Villa Marina Building': {
+        villa: 'Villa Marina',
+        etage: '0',
+        orientation: 'RC',
+        wifi: 'Lan-Rdc',
+        password_wifi: 'Dghtod-45@',
+      },
+      'Kos': {
+        villa: 'Villa Sephora',
+        etage: '1',
+        orientation: 'Droite',
+        wifi: 'Lan KOS',
+        password_wifi: 'xI0$ufl~',
+      },
+      'Kea': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Droite',
+        wifi: 'Lan KEA',
+        password_wifi: 'fbypl7q.',
+      },
+      'Samos': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Milieu droit',
+        wifi: 'Lan SAMOS',
+        password_wifi: 'gyo4j!l|',
+      },
+      'Symi': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Fond gauche',
+        wifi: 'Lan SYMI',
+        password_wifi: "9tav+h'o",
+      },
+      'Milos': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Fond droite',
+        wifi: 'Lan MILOS',
+        password_wifi: 'e:yz7ceQ',
+      },
+      'Rhodes': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: '2ème gauche',
+        wifi: 'Lan RHODES',
+        password_wifi: '.$:qc+@q',
+      },
+      'Santorin': {
+        villa: 'Villa Sephora',
+        etage: '1',
+        orientation: 'Gauche',
+        wifi: 'Lan SANTORIN',
+        password_wifi: 'ft;o?cm7',
+      },
+      'Corfou': {
+        villa: 'Villa Sephora',
+        etage: '2',
+        orientation: 'Gauche',
+        wifi: 'Lan COURFOU',
+        password_wifi: 'tr+cn^t1',
+      },
+      'Mykonos': {
+        villa: 'Villa Sephora',
+        etage: '1',
+        orientation: 'Face',
+        wifi: 'Lan MYKONOS',
+        password_wifi: 'Alo*LDJP',
+      },
+    };
+
+    const d_suffix = {
+      'fr': {
+        '0' : '',
+        '1': 'er',
+        '2': 'e',
+        '3': 'e',
+      },
+      'en': {
+        '0' : '',
+        '1': 'st',
+        '2': 'nd',
+        '3': 'rd',
+      }
+    };
+
+    const ORIENTATION = {
+      Droite: { fr: 'Droite', en: 'Right' },
+      Gauche: { fr: 'Gauche', en: 'Left' },
+      Face:   { fr: 'Face',   en: 'Front' },
+      RC:     { fr: 'RC',     en: 'Ground Floor' }
+    };
+
+    function getOrientation(orientation, lang) {
+      return ORIENTATION[orientation]?.[lang] || orientation;
+    }
+
+    function getAppartmentsByVilla(villaName) {
+      const result = [];
+      for (let key in dict_appartments) {
+        const value = dict_appartments[key];
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          if (value.villa === villaName) {
+            result.push(key);
+          }
+        }
+      }
+      return result;
+    }
+
+    function getAppartmentDetail(option, language) {
+      const raw = dict_appartments[option]['etage'];
+      const etage = (!raw || raw == 0) ? '' : raw;
+      const orientation = getOrientation(dict_appartments[option]['orientation'], language) || '';
+      const suffix = d_suffix[language][etage] || '';
+      return `${etage}${suffix} ${orientation}`;
+    }
+
     function setPressed(btn, pressed) { btn.setAttribute('aria-pressed', pressed ? 'true' : 'false'); }
     function getPressedValue(group) {
       const active = group.querySelector('button[aria-pressed="true"]');
@@ -144,11 +316,12 @@
     const villaGroup = document.getElementById('villaGroup');
     const optionSelect = document.getElementById('optionSelect');
     const channelGroup = document.getElementById('channelGroup');
+    const languageGroup = document.getElementById('language_message');
 
     function refreshOptions() {
       const villa = getPressedValue(villaGroup);
-      const list = villa === 'Villa Sephora' ? ['Kos', 'Kea', 'Samos', 'Symi', 'Milos', 'Rhodes', 'Santorin', 'Corfou', 'Mykonos'] :
-        ['Little Havana', 'Downtown', 'Design District', 'Coconut Grove Terrasse', 'South Beach Terrasse', 'Wynwood Loft', 'Villa Marina Building'];
+      const list = villa === 'Villa Sephora' ? getAppartmentsByVilla('Villa Sephora') :
+        getAppartmentsByVilla('Villa Marina Building').concat(getAppartmentsByVilla('Villa Marina'));
       optionSelect.innerHTML = '';
       const placeholder = document.createElement('option');
       placeholder.value = '';
@@ -164,6 +337,7 @@
     // init segmented groups & options
     makeSegmentedInteractive(villaGroup);
     makeSegmentedInteractive(channelGroup);
+    makeSegmentedInteractive(languageGroup);
     refreshOptions();
 
     // Quand on change de villa, mettre à jour la liste
@@ -206,6 +380,7 @@
       const name = (document.getElementById('name').value || '').trim();
       const phoneRaw = document.getElementById('phone').value;
       const channel = getPressedValue(channelGroup) || 'whatsapp';
+      const language = getPressedValue(languageGroup) || 'fr';
 
       let dial = currentDialCode();
       if (countrySel.value === '__custom') {
@@ -232,28 +407,90 @@
       }
 
       const villa = getPressedValue(villaGroup) || '';
-      const option = (document.getElementById('optionSelect').value || '');
+      const appartment = (document.getElementById('optionSelect').value || '');
+      const detail_appart = getAppartmentDetail(appartment, language);
       const digicodeEntree = (document.getElementById('digicodeEntree').value || '');
       const digicodeAppartement = (document.getElementById('digicodeAppartement').value || '');
       const dateArrivee = document.getElementById('dateArrivee').value;
       const dateDepart = document.getElementById('dateDepart').value;
+      const wifi = dict_appartments[appartment]?.wifi || '';
+      const password_wifi = dict_appartments[appartment]?.password_wifi || '';
+      const lockIcon = '\u{1F510}';
 
-      const base = new URL('.', location.href).href;          // URL du dossier courant
+      const base = new URL('.', location.href).href;
       const contratUrl = base + 'contrat.html';
 
+      function getWelcomeMessage() {
+        if (language === 'fr') {
+          return `Bonjour ${name},
 
-      const message = 
-        `Bonjour ${name},
-Merci pour votre réservation dans la ${villa} (Appartement ${option}) du ${dateArrivee} au ${dateDepart}.
+Nous avons l’immense plaisir de vous accueillir dans notre résidence, la ${villa} Cannes du ${dateArrivee} au ${dateDepart}!
+Nous souhaitons que votre séjour se déroule de manière des plus agréables. Permettez-nous de vous fournir toutes les informations importantes lors de votre séjour :
 
-Immeuble : ${digicodeEntree}
-Appartement : ${digicodeAppartement}
+— Adresse : ${d_adresse[villa]}
+— Appartement : ${appartment}, ${detail_appart}
 
-Voici votre document important à conserver :
-${contratUrl}
+— Code d’accès à l’immeuble : ${digicodeEntree} #
+— Code d’accès à votre apt : ${digicodeAppartement} ${lockIcon}
 
-Bonne installation!`;
+— Date d'Arrivée : ${dateArrivee}
+— Date de Départ : ${dateDepart}
 
+— Wifi : ${wifi}
+— Mot de Passe Wifi : ${password_wifi}
+
+Pour refermer : faire le code et appuyer sur le cadenas 5 secondes
+Avant d’entrer votre code d’accès pour accéder à l’appartement, veuillez patienter jusqu’à ce que le clavier numérique s’illumine, s’il vous plaît. Cela indique que le clavier est prêt à recevoir votre code.
+
+Afin d’assurer votre confort et votre satisfaction, nous tenons à vous rappeler les points suivants :
+  1. Entretien : Nous vous prions de bien vouloir prendre soin de l’appartement pendant toute la durée de votre séjour. Lors de votre départ, nous vous saurions gré de bien vouloir effectuer la vaisselle, vider les poubelles et laisser l’appartement dans l’état où vous l’avez trouvé.
+  2. Caution : Nous tenons à vous informer qu’une empreinte de votre carte bancaire sera réalisée lors de votre arrivée. Soyez assuré(e)(s) qu’aucun montant ne sera prélevé. Cette empreinte servira uniquement de garantie en cas de dommages éventuels.
+  3. Respect du voisinage : Nous vous prions de faire preuve de courtoisie envers les autres résidents de la ${villa}. Afin de préserver la tranquillité de tous, veuillez éviter les nuisances sonores, en particulier après 22h.
+
+Cher client, chère cliente, chers clients, nous sommes véritablement honorés de vous accueillir à la ${villa} Cannes.
+Notre équipe reste à votre entière disposition pour répondre à vos questions et vous assister tout au long de votre séjour.
+Profitez pleinement de votre expérience à la ${villa} Cannes. Avec nos salutations les plus respectueuses,
+
+L’équipe de la ${villa} Cannes`
+        } else if (language === 'en') {
+          return `Hello ${name},
+
+We are delighted to welcome you to our residence, ${villa} Cannes, from ${dateArrivee} to ${dateDepart}!
+We hope your stay will be as pleasant as possible. Please find below all the important information for your stay:
+
+— Address: ${d_adresse[villa]}
+— Apartment: ${appartment}, ${detail_appart}
+
+— Building access code: ${digicodeEntree} #
+— Your apartment access code: ${digicodeAppartement} ${lockIcon}
+
+— Arrival Date: ${dateArrivee}
+— Departure Date: ${dateDepart}
+
+— Wifi : ${wifi}
+— Wifi Password : ${password_wifi}
+
+To close the door: enter the code and press the lock button for 5 seconds.
+Before entering your access code to unlock the apartment door, please wait for the keypad to light up. This indicates that it is ready to receive your code.
+
+To ensure your comfort and satisfaction, please note the following:
+  1. Maintenance: We kindly ask you to take care of the apartment throughout your stay. Upon departure, please wash the dishes, empty the trash, and leave the apartment in the same condition in which you found it.
+  2. Security deposit: Please note that a pre-authorization will be taken on your credit card upon arrival. Rest assured, no amount will be charged. This pre-authorization only serves as a guarantee in case of potential damages.
+  3. Respect for neighbors: We kindly ask that you show consideration for the other residents of ${villa}. To preserve everyone’s peace and quiet, please avoid excessive noise, especially after 10 p.m.
+
+Dear guest(s), we are truly honored to welcome you to ${villa} Cannes.
+Our team remains at your full disposal for any questions or assistance throughout your stay.
+We wish you a wonderful experience at ${villa} Cannes.
+
+Warm regards,
+The ${villa} Cannes Team`
+        } else if (language === 'es') {
+          return ''; // À compléter plus tard
+        }
+        return '';
+      }
+
+      const message = getWelcomeMessage();
       const encoded = encodeURIComponent(message);
 
       function openWhatsApp() {
