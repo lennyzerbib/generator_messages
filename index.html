@@ -597,30 +597,21 @@ Il team di ${villa} Cannes`
         return '';
       }
 
-      function buildPreviewUrl(message, digicodeImmeuble, digicodeAppartement, wifi, wifiPass) {
-        const base = new URL('.', location.href).href; // même dossier
-        const page = base + 'message_preview.html';
-
-        const params = new URLSearchParams({
-          message, // PAS de encodeURIComponent ici
-          digicodeImmeuble,
-          digicodeAppartement,
-          wifi,
-          wifiPass
-        });
-
-        return page + '?' + params.toString();
+      function buildPreviewUrl(data) {
+        const json = JSON.stringify(data);
+        const encoded = btoa(encodeURIComponent(json));
+        return `https://ton-projet.vercel.app/p/${encoded}`;
       }
 
-      const message = getWelcomeMessage();
-
-      const previewUrl = buildPreviewUrl(
+      const data = {
         message,
-        digicodeEntree,
+        digicodeImmeuble: digicodeEntree,
         digicodeAppartement,
         wifi,
-        password_wifi
-      );
+        wifiPass: password_wifi
+      };
+
+      const previewUrl = buildPreviewUrl(data);
 
       const finalMessage = `${message}
 

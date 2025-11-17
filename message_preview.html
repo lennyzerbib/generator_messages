@@ -65,17 +65,43 @@
   <pre id="messageBlock"></pre>
 
   <script>
-    // Récupère un paramètre GET
-    function g(name) {
-      return new URLSearchParams(window.location.search).get(name) || "";
+    //
+    // 🔥 NOUVEAU : récupération du token dans l'URL
+    //
+    function getToken() {
+      const parts = window.location.pathname.split("/p/");
+      return parts[1] || null;
     }
 
-    const digicodeImmeuble    = g("digicodeImmeuble");
-    const digicodeAppartement = g("digicodeAppartement");
-    const wifi                = g("wifi");
-    const wifiPass            = g("wifiPass");
-    const message             = g("message"); // déjà décodé par URLSearchParams
+    function decodeToken(token) {
+      try {
+        const json = decodeURIComponent(atob(token));
+        return JSON.parse(json);
+      } catch (e) {
+        return null;
+      }
+    }
 
+    const token = getToken();
+    const data = decodeToken(token);
+
+    if (!data) {
+      document.body.innerHTML = "<p style='color:red'>Erreur : lien invalide.</p>";
+      throw new Error("Invalid token");
+    }
+
+    //
+    // 🔥 Les données décodées du token
+    //
+    const digicodeImmeuble     = data.digicodeImmeuble || "";
+    const digicodeAppartement  = data.digicodeAppartement || "";
+    const wifi                 = data.wifi || "";
+    const wifiPass             = data.wifiPass || "";
+    const message              = data.message || "";
+
+    //
+    // 🔥 Affichage
+    //
     const codesDiv = document.getElementById("importantCodes");
     codesDiv.innerHTML = `
       <p>🔐 Code immeuble : <strong>${digicodeImmeuble}</strong></p>
@@ -91,48 +117,19 @@
 
     document.getElementById("messageBlock").textContent = message;
 
-    const copyBtn     = document.getElementById("copyWifiBtn");
-    const wifiPassEl  = document.getElementById("wifiPassText");
+    //
+    // Copier le mot de passe WiFi
+    //
+    const copyBtn    = document.getElementById("copyWifiBtn");
+    const wifiPassEl = document.getElementById("wifiPassText");
 
-    if (copyBtn && wifiPassEl) {
-      copyBtn.addEventListener("click", function () {
-        const text = wifiPassEl.textContent.trim();
-        if (!text) return;
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text)
-            .then(function () {
-              const old = copyBtn.textContent;
-              copyBtn.textContent = "Copié ✅";
-              setTimeout(function () {
-                copyBtn.textContent = old;
-              }, 1500);
-            })
-            .catch(function () {
-              alert("Impossible de copier automatiquement. Vous pouvez copier le texte manuellement.");
-            });
-        } else {
-          // Fallback vieux navigateurs
-          const textarea = document.createElement("textarea");
-          textarea.value = text;
-          textarea.style.position = "fixed";
-          textarea.style.opacity = "0";
-          document.body.appendChild(textarea);
-          textarea.select();
-          try {
-            document.execCommand("copy");
-            const old = copyBtn.textContent;
-            copyBtn.textContent = "Copié ✅";
-            setTimeout(function () {
-              copyBtn.textContent = old;
-            }, 1500);
-          } catch (err) {
-            alert("Impossible de copier automatiquement. Vous pouvez copier le texte manuellement.");
-          }
-          document.body.removeChild(textarea);
-        }
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(wifiPassEl.textContent.trim()).then(() => {
+        const old = copyBtn.textContent;
+        copyBtn.textContent = "Copié ✅";
+        setTimeout(() => copyBtn.textContent = old, 1500);
       });
-    }
+    });
   </script>
 </body>
 </html>
