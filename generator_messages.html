@@ -441,8 +441,10 @@ Nous souhaitons que votre séjour se déroule de manière des plus agréables. P
 — Adresse : ${d_adresse[villa]}
 — Appartement : ${appartment}, ${detail_appart}
 
-— Code d’accès à l’immeuble : ${digicodeEntree} #
-— Code d’accès à votre apt : ${digicodeAppartement} ${lockIcon}
+— Code d’accès à l’immeuble :
+                                  ${digicodeEntree} #
+— Code d’accès à votre apt :
+                                  ${digicodeAppartement} ${lockIcon}
 
 — Date d'Arrivée : ${dateArrivee}
 — Date de Départ : ${dateDepart}
@@ -595,8 +597,37 @@ Il team di ${villa} Cannes`
         return '';
       }
 
+      function buildPreviewUrl(message, digicodeImmeuble, digicodeAppartement, wifi, wifiPass) {
+        const base = new URL('.', location.href).href; // même dossier
+        const page = base + 'message_preview.html';
+
+        const params = new URLSearchParams({
+          message, // PAS de encodeURIComponent ici
+          digicodeImmeuble,
+          digicodeAppartement,
+          wifi,
+          wifiPass
+        });
+
+        return page + '?' + params.toString();
+      }
+
       const message = getWelcomeMessage();
-      const encoded = encodeURIComponent(message);
+
+      const previewUrl = buildPreviewUrl(
+        message,
+        digicodeEntree,
+        digicodeAppartement,
+        wifi,
+        password_wifi
+      );
+
+      const finalMessage = `${message}
+
+      ➡️ Plus d’informations ici :
+      ${previewUrl}`;
+
+      const encoded = encodeURIComponent(finalMessage);
 
       function openWhatsApp() {
         const waUrl = `https://wa.me/${digits}?text=${encoded}`;
