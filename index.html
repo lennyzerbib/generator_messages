@@ -385,7 +385,7 @@
     });
 
     // --- Submit handling ---
-    document.getElementById('wappForm').addEventListener('submit', function (e) {
+    document.getElementById('wappForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       const name = (document.getElementById('name').value || '').trim();
       const phoneRaw = document.getElementById('phone').value;
@@ -597,12 +597,8 @@ Il team di ${villa} Cannes`
         return '';
       }
 
-      function buildPreviewUrl(data) {
-        const json = JSON.stringify(data);
-        const encoded = btoa(encodeURIComponent(json));
-        return `https://ton-projet.vercel.app/p/${encoded}`;
-      }
-
+      const message = getWelcomeMessage();
+      
       const data = {
         message,
         digicodeImmeuble: digicodeEntree,
@@ -611,7 +607,14 @@ Il team di ${villa} Cannes`
         wifiPass: password_wifi
       };
 
-      const previewUrl = buildPreviewUrl(data);
+      const response = await fetch("/api/create-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      const previewUrl = result.url;
 
       const finalMessage = `${message}
 

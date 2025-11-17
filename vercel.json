@@ -1,0 +1,8 @@
+{
+  "routes": [
+    {
+      "src": "/i/([a-zA-Z0-9]{4,5})",
+      "dest": "/message_preview.html?code=$1"
+    }
+  ]
+}
