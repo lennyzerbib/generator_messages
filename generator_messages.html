@@ -253,25 +253,17 @@
     };
 
     const d_suffix = {
-      'fr': {
-        '0' : '',
-        '1': 'er',
-        '2': 'e',
-        '3': 'e',
-      },
-      'en': {
-        '0' : '',
-        '1': 'st',
-        '2': 'nd',
-        '3': 'rd',
-      }
+      '0': { fr: '',   en: '',   es: ''   },
+      '1': { fr: 'er', en: 'st', es: 'º'  },
+      '2': { fr: 'e',  en: 'nd', es: 'º'  },
+      '3': { fr: 'e',  en: 'rd', es: 'º'  },
     };
 
     const ORIENTATION = {
-      Droite: { fr: 'Droite', en: 'Right' },
-      Gauche: { fr: 'Gauche', en: 'Left' },
-      Face:   { fr: 'Face',   en: 'Front' },
-      RC:     { fr: 'RC',     en: 'Ground Floor' }
+      Droite: { fr: 'Droite', en: 'Right', es: 'Derecha' },
+      Gauche: { fr: 'Gauche', en: 'Left',  es: 'Izquierda' },
+      Face:   { fr: 'Face',   en: 'Front', es: 'Frente' },
+      RC:     { fr: 'RC',     en: 'Ground Floor', es: 'Planta baja' }
     };
 
     function getOrientation(orientation, lang) {
@@ -295,7 +287,7 @@
       const raw = dict_appartments[option]['etage'];
       const etage = (!raw || raw == 0) ? '' : raw;
       const orientation = getOrientation(dict_appartments[option]['orientation'], language) || '';
-      const suffix = d_suffix[language][etage] || '';
+      const suffix = d_suffix[etage][language] || '';
       return `${etage}${suffix} ${orientation}`;
     }
 
@@ -424,7 +416,7 @@
         if (language === 'fr') {
           return `Bonjour ${name},
 
-Nous avons l’immense plaisir de vous accueillir dans notre résidence, la ${villa} Cannes du ${dateArrivee} au ${dateDepart}!
+Nous avons l’immense plaisir de vous accueillir dans notre résidence, la ${villa} Cannes!
 Nous souhaitons que votre séjour se déroule de manière des plus agréables. Permettez-nous de vous fournir toutes les informations importantes lors de votre séjour :
 
 — Adresse : ${d_adresse[villa]}
@@ -455,7 +447,7 @@ L’équipe de la ${villa} Cannes`
         } else if (language === 'en') {
           return `Hello ${name},
 
-We are delighted to welcome you to our residence, ${villa} Cannes, from ${dateArrivee} to ${dateDepart}!
+We are delighted to welcome you to our residence, ${villa} Cannes!
 We hope your stay will be as pleasant as possible. Please find below all the important information for your stay:
 
 — Address: ${d_adresse[villa]}
@@ -485,7 +477,37 @@ We wish you a wonderful experience at ${villa} Cannes.
 Warm regards,
 The ${villa} Cannes Team`
         } else if (language === 'es') {
-          return ''; // À compléter plus tard
+          return `Hola ${name},
+
+Tenemos el gran placer de darle la bienvenida a nuestra residencia, ${villa} Cannes!
+Deseamos que su estancia sea lo más agradable posible. Permítanos proporcionarle toda la información importante para su estancia:
+
+— Dirección: ${d_adresse[villa]}
+— Apartamento: ${appartment}, ${detail_appart}
+
+— Código de acceso al edificio: ${digicodeEntree} #
+— Código de acceso a su apartamento: ${digicodeAppartement} ${lockIcon}
+
+— Fecha de llegada: ${dateArrivee}
+— Fecha de salida: ${dateDepart}
+
+— Wifi: ${wifi}
+— Contraseña del Wifi: ${password_wifi}
+
+Para cerrar la puerta: introduzca el código y mantenga pulsado el botón del candado durante 5 segundos.
+Antes de introducir su código de acceso para entrar en el apartamento, por favor espere a que el teclado numérico se ilumine. Esto indica que está listo para recibir su código.
+
+Para garantizar su comodidad y satisfacción, queremos recordarle los siguientes puntos:
+  1. Mantenimiento: Le rogamos cuidar del apartamento durante toda su estancia. Al marcharse, le agradeceríamos que lavara los platos, vaciara la basura y dejara el apartamento en el mismo estado en el que lo encontró.
+  2. Depósito de garantía: Le informamos de que se realizará una preautorización en su tarjeta de crédito a su llegada. Le aseguramos que no se efectuará ningún cargo. Esta preautorización se utiliza únicamente como garantía en caso de posibles daños.
+  3. Respeto al vecindario: Le pedimos que sea considerado(a) con los demás residentes de ${villa}. Para preservar la tranquilidad de todos, evite ruidos molestos, especialmente después de las 22:00.
+
+Estimado/a cliente, estamos realmente honrados de darle la bienvenida a ${villa} Cannes.
+Nuestro equipo queda a su entera disposición para responder a sus preguntas y asistirle durante toda su estancia.
+Le deseamos una maravillosa experiencia en ${villa} Cannes.
+
+Con nuestros más cordiales saludos,
+El equipo de ${villa} Cannes`
         }
         return '';
       }
