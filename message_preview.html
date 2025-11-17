@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Message invité</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+      color: #222;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .codes {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+    .codes p {
+      margin: 6px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      line-height: 1.5;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .copy-btn {
+      font-size: 13px;
+      margin-left: 8px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #3498db;
+      background: #3498db;
+      color: #fff;
+      cursor: pointer;
+    }
+    .copy-btn:active {
+      transform: translateY(1px);
+    }
+    .small-note {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Informations pour le client</h1>
+
+  <div class="codes" id="importantCodes"></div>
+
+  <pre id="messageBlock"></pre>
+
+  <script>
+    // Récupère un paramètre GET
+    function g(name) {
+      return new URLSearchParams(window.location.search).get(name) || "";
+    }
+
+    const digicodeImmeuble    = g("digicodeImmeuble");
+    const digicodeAppartement = g("digicodeAppartement");
+    const wifi                = g("wifi");
+    const wifiPass            = g("wifiPass");
+    const message             = g("message"); // déjà décodé par URLSearchParams
+
+    const codesDiv = document.getElementById("importantCodes");
+    codesDiv.innerHTML = `
+      <p>🔐 Code immeuble : <strong>${digicodeImmeuble}</strong></p>
+      <p>🔑 Code appartement : <strong>${digicodeAppartement}</strong></p>
+      <p>📶 Wifi : <strong>${wifi}</strong></p>
+      <p>
+        🔏 Mot de passe :
+        <strong id="wifiPassText">${wifiPass}</strong>
+        <button id="copyWifiBtn" class="copy-btn">Copier</button>
+      </p>
+      <p class="small-note">Cliquez sur "Copier" pour mettre le mot de passe dans votre presse-papiers.</p>
+    `;
+
+    document.getElementById("messageBlock").textContent = message;
+
+    const copyBtn     = document.getElementById("copyWifiBtn");
+    const wifiPassEl  = document.getElementById("wifiPassText");
+
+    if (copyBtn && wifiPassEl) {
+      copyBtn.addEventListener("click", function () {
+        const text = wifiPassEl.textContent.trim();
+        if (!text) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(function () {
+              const old = copyBtn.textContent;
+              copyBtn.textContent = "Copié ✅";
+              setTimeout(function () {
+                copyBtn.textContent = old;
+              }, 1500);
+            })
+            .catch(function () {
+              alert("Impossible de copier automatiquement. Vous pouvez copier le texte manuellement.");
+            });
+        } else {
+          // Fallback vieux navigateurs
+          const textarea = document.createElement("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand("copy");
+            const old = copyBtn.textContent;
+            copyBtn.textContent = "Copié ✅";
+            setTimeout(function () {
+              copyBtn.textContent = old;
+            }, 1500);
+          } catch (err) {
+            alert("Impossible de copier automatiquement. Vous pouvez copier le texte manuellement.");
+          }
+          document.body.removeChild(textarea);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
