@@ -2,129 +2,136 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Message invité</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Informations de séjour</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      padding: 20px;
-      background: #f7f7f7;
-      color: #222;
-    }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 12px;
-    }
-    .codes {
-      background: #ffffff;
-      padding: 16px;
-      border-radius: 12px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-      margin-bottom: 24px;
-    }
-    .codes p {
-      margin: 6px 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    pre {
-      white-space: pre-wrap;
-      background: #ffffff;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 15px;
-      line-height: 1.5;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-    }
-    .copy-btn {
-      font-size: 13px;
-      margin-left: 8px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: 1px solid #3498db;
-      background: #3498db;
-      color: #fff;
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; background:#0b0d12; color:#eef1f6; display:flex; min-height:100dvh; }
+    .wrap { margin:auto; width:min(720px, 92vw); padding: 20px; }
+    .card { background:#121722; border:1px solid #222938; border-radius:16px; padding:24px; box-shadow: 0 8px 24px rgba(0,0,0,.25); margin-bottom: 20px; }
+    h1 { font-size:clamp(22px, 3.5vw, 28px); margin:0 0 16px; }
+    h2 { font-size: 20px; margin: 20px 0 10px; color: #3e7aff; }
+    p { margin: 8px 0; line-height: 1.6; }
+    strong { color: #fff; }
+    .copy-btn { 
+      background: #3e7aff; 
+      color: white; 
+      border: none; 
+      padding: 6px 12px;
+      border-radius: 8px; 
+      font-size: 14px; 
       cursor: pointer;
+      margin-left: 10px;
     }
-    .copy-btn:active {
-      transform: translateY(1px);
-    }
-    .small-note {
-      font-size: 12px;
-      margin-top: 8px;
-      color: #555;
+    .copy-btn:hover { background: #2d5fd9; }
+    .copy-btn:active { transform: translateY(1px); }
+    .error { color:#ff7b7b; padding: 20px; text-align: center; }
+    .loading { color:#3e7aff; padding: 20px; text-align: center; }
+    pre { 
+      background: #0e121a; 
+      padding: 16px; 
+      border-radius: 8px; 
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
   </style>
 </head>
 <body>
-
-  <h1>Informations pour le client</h1>
-
-  <div class="codes" id="importantCodes"></div>
-
-  <pre id="messageBlock"></pre>
+  <main class="wrap">
+    <div id="content">
+      <div class="loading">
+        <p>⏳ Chargement des informations...</p>
+      </div>
+    </div>
+  </main>
 
   <script>
-    // Récupère le code court dans l'URL : ?code=Ab3F
     function getCode() {
-      const params = new URLSearchParams(window.location.search);
-      const fromQuery = params.get("code");
-      if (fromQuery) return fromQuery;
-      const match = window.location.pathname.match(/\/i\/([a-zA-Z0-9]{4,5})/);
-      return match ? match[1] : "";
+      return new URLSearchParams(window.location.search).get("code") || "";
     }
 
     async function main() {
       const code = getCode();
+      const contentDiv = document.getElementById("content");
+      
       if (!code) {
-        document.body.innerHTML = "<p style='color:red'>Erreur : code manquant.</p>";
+        contentDiv.innerHTML = '<div class="error"><p>❌ Erreur : code manquant dans l\'URL.</p></div>';
         return;
       }
 
-      // Appel à ton backend pour récupérer les données stockées
-      const resp = await fetch(`/api/get-link?code=${encodeURIComponent(code)}`);
-      if (!resp.ok) {
-        document.body.innerHTML = "<p style='color:red'>Lien invalide ou expiré.</p>";
-        return;
+      try {
+        const resp = await fetch(`/api/get-link?code=${encodeURIComponent(code)}`);
+        
+        if (!resp.ok) {
+          contentDiv.innerHTML = '<div class="error"><p>❌ Lien invalide ou expiré.</p></div>';
+          return;
+        }
+
+        const data = await resp.json();
+
+        const digicodeImmeuble = data.digicodeImmeuble || "Non fourni";
+        const digicodeAppartement = data.digicodeAppartement || "Non fourni";
+        const wifi = data.wifi || "Non fourni";
+        const wifiPass = data.wifiPass || "Non fourni";
+        const message = data.message || "";
+
+        contentDiv.innerHTML = `
+          <div class="card">
+            <h1>📋 Informations importantes</h1>
+            
+            <div id="importantCodes">
+              <h2>🔐 Codes d'accès</h2>
+              <p>🏢 <strong>Code immeuble :</strong> ${digicodeImmeuble}</p>
+              <p>🚪 <strong>Code appartement :</strong> ${digicodeAppartement}</p>
+              
+              <h2>📶 Connexion WiFi</h2>
+              <p>📡 <strong>Réseau :</strong> ${wifi}</p>
+              <p>
+                🔏 <strong>Mot de passe :</strong>
+                <span id="wifiPassText">${wifiPass}</span>
+                <button id="copyWifiBtn" class="copy-btn">📋 Copier</button>
+              </p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>💬 Message complet</h2>
+            <pre id="messageBlock">${message}</pre>
+          </div>
+        `;
+
+        // Ajouter l'événement de copie après avoir créé le HTML
+        const copyBtn = document.getElementById("copyWifiBtn");
+        const wifiPassEl = document.getElementById("wifiPassText");
+
+        if (copyBtn && wifiPassEl) {
+          copyBtn.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(wifiPassEl.textContent.trim());
+              copyBtn.textContent = "✅ Copié !";
+              setTimeout(() => {
+                copyBtn.textContent = "📋 Copier";
+              }, 2000);
+            } catch (err) {
+              console.error("Erreur de copie:", err);
+              alert("Erreur lors de la copie");
+            }
+          });
+        }
+
+      } catch (error) {
+        console.error("Erreur:", error);
+        contentDiv.innerHTML = `<div class="error"><p>❌ Erreur lors du chargement : ${error.message}</p></div>`;
       }
-
-      const data = await resp.json();
-
-      const digicodeImmeuble     = data.digicodeImmeuble || "";
-      const digicodeAppartement  = data.digicodeAppartement || "";
-      const wifi                 = data.wifi || "";
-      const wifiPass             = data.wifiPass || "";
-      const message              = data.message || "";
-
-      const codesDiv = document.getElementById("importantCodes");
-      codesDiv.innerHTML = `
-        <p>🔐 Code immeuble : <strong>${digicodeImmeuble}</strong></p>
-        <p>🔑 Code appartement : <strong>${digicodeAppartement}</strong></p>
-        <p>📶 Wifi : <strong>${wifi}</strong></p>
-        <p>
-          🔏 Mot de passe :
-          <strong id="wifiPassText">${wifiPass}</strong>
-          <button id="copyWifiBtn" class="copy-btn">Copier</button>
-        </p>
-        <p class="small-note">Cliquez sur "Copier" pour mettre le mot de passe dans votre presse-papiers.</p>
-      `;
-
-      document.getElementById("messageBlock").textContent = message;
-
-      // Bouton "Copier" pour le mot de passe Wifi
-      const copyBtn    = document.getElementById("copyWifiBtn");
-      const wifiPassEl = document.getElementById("wifiPassText");
-
-      copyBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(wifiPassEl.textContent.trim()).then(() => {
-          const old = copyBtn.textContent;
-          copyBtn.textContent = "Copié ✅";
-          setTimeout(() => copyBtn.textContent = old, 1500);
-        });
-      });
     }
 
-    main();
+    // Lancer le script au chargement
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', main);
+    } else {
+      main();
+    }
   </script>
 </body>
 </html>
