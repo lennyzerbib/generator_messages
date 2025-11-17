@@ -70,6 +70,8 @@
           <button type="button" data-value="fr" aria-pressed="true">Français</button>
           <button type="button" data-value="en" aria-pressed="false">Anglais</button>
           <button type="button" data-value="es" aria-pressed="false">Espagnol</button>
+          <button type="button" data-value="it" aria-pressed="false">Italien</button>
+          <button type="button" data-value="ru" aria-pressed="false">Russe</button>
         </div>
 
         <hr style="margin:18px 0;border:none;border-top:1px solid #222938" />
@@ -253,17 +255,17 @@
     };
 
     const d_suffix = {
-      '0': { fr: '',   en: '',   es: ''   },
-      '1': { fr: 'er', en: 'st', es: 'º'  },
-      '2': { fr: 'e',  en: 'nd', es: 'º'  },
-      '3': { fr: 'e',  en: 'rd', es: 'º'  },
+      '0': { fr: '',   en: '',   es: '',  it: '',  ru: '' },
+      '1': { fr: 'er', en: 'st', es: 'º', it: 'º', ru: 'й' },
+      '2': { fr: 'e',  en: 'nd', es: 'º', it: 'º', ru: 'й' },
+      '3': { fr: 'e',  en: 'rd', es: 'º', it: 'º', ru: 'й' },
     };
 
     const ORIENTATION = {
-      Droite: { fr: 'Droite', en: 'Right', es: 'Derecha' },
-      Gauche: { fr: 'Gauche', en: 'Left',  es: 'Izquierda' },
-      Face:   { fr: 'Face',   en: 'Front', es: 'Frente' },
-      RC:     { fr: 'RC',     en: 'Ground Floor', es: 'Planta baja' }
+      Droite: {fr: 'Droite', en: 'Right', es: 'Derecha', it: 'Destra', ru: 'Справа' },
+      Gauche: {fr: 'Gauche', en: 'Left', es: 'Izquierda', it: 'Sinistra', ru: 'Слева' },
+      Face: {fr: 'Face', en: 'Front', es: 'Frente', it: 'Fronte', ru: 'Спереди' },
+      RC: {fr: 'RC', en: 'Ground Floor', es: 'Planta baja', it: 'Piano terra', ru: 'Первый этаж'}
     };
 
     function getOrientation(orientation, lang) {
@@ -286,10 +288,17 @@
     function getAppartmentDetail(option, language) {
       const raw = dict_appartments[option]['etage'];
       const etage = (!raw || raw == 0) ? '' : raw;
+
       const orientation = getOrientation(dict_appartments[option]['orientation'], language) || '';
-      const suffix = d_suffix[etage][language] || '';
-      return `${etage}${suffix} ${orientation}`;
+      const suffix = d_suffix[etage]?.[language] || '';
+
+      if (language === 'ru' && etage !== '') {
+        return `${etage}-${suffix} ${orientation}`.trim();
+      }
+
+      return `${etage}${suffix} ${orientation}`.trim();
     }
+
 
     function setPressed(btn, pressed) { btn.setAttribute('aria-pressed', pressed ? 'true' : 'false'); }
     function getPressedValue(group) {
@@ -508,6 +517,70 @@ Le deseamos una maravillosa experiencia en ${villa} Cannes.
 
 Con nuestros más cordiales saludos,
 El equipo de ${villa} Cannes`
+        } else if (language === 'it') {
+          return `Caro/a ${name},
+
+Siamo estremamente lieti di darLe il benvenuto nella nostra residenza, ${villa} Cannes!
+Desideriamo che il Suo soggiorno sia il più piacevole possibile. Permetta che Le forniamo tutte le informazioni importanti per la Sua permanenza:
+
+— Indirizzo: ${d_adresse[villa]}
+— Appartamento: ${appartment}, ${detail_appart}
+
+— Codice di accesso all’edificio: ${digicodeEntree} #
+— Codice di accesso al Suo appartamento: ${digicodeAppartement} ${lockIcon}
+
+— Data di arrivo: ${dateArrivee}
+— Data di partenza: ${dateDepart}
+
+— Wifi: ${wifi}
+— Password Wifi: ${password_wifi}
+
+Per chiudere la porta: inserisca il codice e tenga premuto il pulsante del lucchetto per 5 secondi.
+Prima di inserire il Suo codice di accesso per entrare nell’appartamento, attenda gentilmente che il tastierino numerico si illumini. Questo indica che è pronto a ricevere il codice.
+
+Per garantirLe il massimo comfort e soddisfazione, La invitiamo a prendere nota dei seguenti punti:
+  1. Manutenzione: La preghiamo di avere cura dell’appartamento durante tutto il soggiorno. Al momento della partenza, La ringrazieremmo se potesse lavare i piatti, svuotare la spazzatura e lasciare l’appartamento nelle stesse condizioni in cui lo ha trovato.
+  2. Deposito cauzionale: La informiamo che, all’arrivo, verrà effettuata una pre-autorizzazione sulla Sua carta di credito. Le assicuriamo che non verrà addebitato alcun importo. La pre-autorizzazione serve esclusivamente come garanzia in caso di eventuali danni.
+  3. Rispetto del vicinato: La preghiamo di mostrare cortesia nei confronti degli altri residenti di ${villa}. Per garantire la tranquillità di tutti, eviti rumori molesti, soprattutto dopo le 22:00.
+
+Gentile cliente, siamo davvero onorati di accoglierLa presso ${villa} Cannes.
+Il nostro team è a Sua completa disposizione per qualsiasi domanda o assistenza durante il Suo soggiorno.
+Le auguriamo una splendida esperienza presso ${villa} Cannes.
+
+Con i nostri più cordiali saluti,
+Il team di ${villa} Cannes`
+        } else if (language === 'ru') {
+          return `Уважаемый(ая) ${name},
+
+Мы рады приветствовать вас в нашей резиденции ${villa} Cannes!
+Надеемся, что ваше пребывание будет максимально комфортным. Пожалуйста, ознакомьтесь с важной информацией, которая пригодится вам во время проживания:
+
+— Адрес: ${d_adresse[villa]}
+— Апартаменты: ${appartment}, ${detail_appart}
+
+— Код доступа к зданию: ${digicodeEntree} #
+— Код доступа в ваши апартаменты: ${digicodeAppartement} ${lockIcon}
+
+— Дата заезда: ${dateArrivee}
+— Дата выезда: ${dateDepart}
+
+— Wi-Fi: ${wifi}
+— Пароль Wi-Fi: ${password_wifi}
+
+Чтобы закрыть дверь: введите код и удерживайте кнопку с замком 5 секунд.
+Перед вводом кода для входа, пожалуйста, подождите, пока не загорится клавиатура — это означает, что она готова принять код.
+
+Для вашего удобства и комфорта, просим обратить внимание на следующие моменты:
+  1. Уборка: Пожалуйста, бережно относитесь к апартаментам на протяжении всего проживания. При выезде мы будем признательны, если вы помоете посуду, выбросите мусор и оставите апартаменты в таком же состоянии, в каком они были при заселении.
+  2. Депозит: Обращаем ваше внимание, что при заселении будет выполнена предварительная авторизация на вашей банковской карте. Денежные средства списаны не будут. Эта операция служит лишь гарантией на случай возможного ущерба.
+  3. Тишина и уважение к соседям: Просим соблюдать тишину и уважать других жителей ${villa}. Пожалуйста, избегайте шума, особенно после 22:00.
+
+Уважаемые гости, для нас большая честь принимать вас в ${villa} Cannes.
+Наша команда всегда к вашим услугам и готова помочь вам в любое время.
+Желаем вам приятного пребывания в ${villa} Cannes!
+
+С уважением,
+Команда ${villa} Cannes`
         }
         return '';
       }
