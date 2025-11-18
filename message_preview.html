@@ -41,18 +41,81 @@
   <main class="wrap">
     <div id="content">
       <div class="loading">
-        <p>⏳ Chargement des informations...</p>
+        <p>⏳ ...</p>
       </div>
     </div>
   </main>
 
   <script>
+    const dict_language = {
+      'Informations Importantes' : {
+        'fr': 'Informations Importantes',
+        'en': 'Important Information',
+        'es': 'Información Importante',
+        'it': 'Informazioni Importanti',
+        'ru': 'Важная информация'
+      },
+      'Codes d\'Accès' : {
+        'fr': 'Codes d\'Accès',
+        'en': 'Access Codes',
+        'es': 'Códigos de Acceso',
+        'it': 'Codici di Accesso',
+        'ru': 'Коды доступа'
+      },
+      'Code Immeuble' : {
+        'fr': 'Code Immeuble',
+        'en': 'Building Code',
+        'es': 'Código del Edificio',
+        'it': 'Codice Edificio',
+        'ru': 'Код здания'
+      },
+      'Code Appartement' : {
+        'fr': 'Code Appartement',
+        'en': 'Apartment Code',
+        'es': 'Código del Apartamento',
+        'it': 'Codice Appartamento',
+        'ru': 'Код квартиры'
+      },
+      'Connexion WiFi' : {
+        'fr': 'Connexion WiFi',
+        'en': 'WiFi Connection',
+        'es': 'Conexión WiFi',
+        'it': 'Connessione WiFi',
+        'ru': 'Подключение к WiFi'
+      },
+      'Réseau' : {
+        'fr': 'Réseau',
+        'en': 'Network',
+        'es': 'Red',
+        'it': 'Rete',
+        'ru': 'Сеть'
+      },
+      'Mot de Passe' : {
+        'fr': 'Mot de Passe',
+        'en': 'Password',
+        'es': 'Contraseña',
+        'it': 'Password',
+        'ru': 'Пароль'
+      },
+      'Messages Complets' : {
+        'fr': 'Messages Complets',
+        'en': 'Full Messages',
+        'es': 'Mensajes Completos',
+        'it': 'Messaggi Completi',
+        'ru': 'Полные сообщения'
+      },
+      'Erreur lors du chargement' : {
+        'fr': 'Erreur lors du chargement',
+        'en': 'Error loading',
+        'es': 'Error al cargar',
+        'it': 'Errore durante il caricamento',
+        'ru': 'Ошибка при загрузке'
+      }
+    };
+
     function getCode() {
-      // Essayer d'abord depuis les query params (?code=xxx)
       const urlParams = new URLSearchParams(window.location.search);
       let code = urlParams.get("code");
-      
-      // Si pas trouvé, essayer depuis le path (/i/xxx)
       if (!code) {
         const pathMatch = window.location.pathname.match(/\/i\/([a-zA-Z0-9]{4,5})/);
         if (pathMatch) {
@@ -68,7 +131,7 @@
       const contentDiv = document.getElementById("content");
       
       if (!code) {
-        contentDiv.innerHTML = '<div class="error"><p>❌ Erreur : code manquant dans l\'URL.</p></div>';
+        contentDiv.innerHTML = '<div class="error"><p>❌ ERROR</p></div>';
         return;
       }
 
@@ -76,31 +139,31 @@
         const resp = await fetch(`/api/get-link?code=${encodeURIComponent(code)}`);
         
         if (!resp.ok) {
-          contentDiv.innerHTML = '<div class="error"><p>❌ Lien invalide ou expiré.</p></div>';
+          contentDiv.innerHTML = '<div class="error"><p>❌ ERROR</p></div>';
           return;
         }
 
         const data = await resp.json();
 
-        const digicodeImmeuble = data.digicodeImmeuble || "Non fourni";
-        const digicodeAppartement = data.digicodeAppartement || "Non fourni";
-        const wifi = data.wifi || "Non fourni";
-        const wifiPass = data.wifiPass || "Non fourni";
+        const digicodeImmeuble = data.digicodeImmeuble || "❌";
+        const digicodeAppartement = data.digicodeAppartement || "❌";
+        const wifi = data.wifi || "❌";
+        const wifiPass = data.wifiPass || "❌";
         const message = data.message || "";
+        const language = data.language || "fr";
 
         contentDiv.innerHTML = `
           <div class="card">
-            <h1>📋 Informations importantes</h1>
-            
+            <h1>📋 ${dict_language['Informations Importantes'][language]}</h1>
             <div id="importantCodes">
-              <h2>🔐 Codes d'accès</h2>
-              <p>🏢 <strong>Code immeuble :</strong> ${digicodeImmeuble}</p>
-              <p>🚪 <strong>Code appartement :</strong> ${digicodeAppartement}</p>
+              <h2>🔐 ${dict_language["Codes d\'Accès"][language]}</h2>
+              <p>🏢 <strong>${dict_language["Code Immeuble"][language]} :</strong> ${digicodeImmeuble}</p>
+              <p>🚪 <strong>${dict_language["Code Appartement"][language]} :</strong> ${digicodeAppartement}</p>
               
-              <h2>📶 Connexion WiFi</h2>
-              <p>📡 <strong>Réseau :</strong> ${wifi}</p>
+              <h2>📶 ${dict_language['Connexion WiFi'][language]}</h2>
+              <p>📡 <strong>${dict_language['Réseau'][language]} :</strong> ${wifi}</p>
               <p>
-                🔏 <strong>Mot de passe :</strong>
+                🔏 <strong>${dict_language['Mot de Passe'][language]} :</strong>
                 <span id="wifiPassText">${wifiPass}</span>
                 <button id="copyWifiBtn" class="copy-btn">📋 Copier</button>
               </p>
@@ -108,7 +171,7 @@
           </div>
 
           <div class="card">
-            <h2>💬 Message complet</h2>
+            <h2>💬 ${dict_language['Messages Complets'][language]}</h2>
             <pre id="messageBlock">${message}</pre>
           </div>
         `;
@@ -127,14 +190,14 @@
               }, 2000);
             } catch (err) {
               console.error("Erreur de copie:", err);
-              alert("Erreur lors de la copie");
+              alert("❌ Erreur de copie");
             }
           });
         }
 
       } catch (error) {
         console.error("Erreur:", error);
-        contentDiv.innerHTML = `<div class="error"><p>❌ Erreur lors du chargement : ${error.message}</p></div>`;
+        contentDiv.innerHTML = `<div class="error"><p>❌ ${dict_language['Erreur lors du chargement'][language]} : ${error.message}</p></div>`;
       }
     }
 
